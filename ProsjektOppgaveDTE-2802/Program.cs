@@ -15,7 +15,7 @@ builder.Services.AddAuthenticationCore();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<AuthenticationStateProvider, AuthStateProvider>();
 builder.Services.AddSingleton<WeatherForecastService>();
-builder.Services.AddHttpClient("BlogHttpClient", client => client.BaseAddress = new Uri("https://localhost:7115"));
+builder.Services.AddSingleton<HttpClient>();
 
 var app = builder.Build();
 

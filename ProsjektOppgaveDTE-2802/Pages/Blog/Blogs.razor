@@ -1,9 +1,13 @@
 ﻿@page "/blogs"
 @using ProsjektOppgaveBlazor.data.Models;
+@using System.Security.Principal
+@using System.Net.Http.Headers
 @inject HttpClient BlogHttpClient
 @inject NavigationManager NavigationManager
 
 <h3>Blogs</h3>
+
+<p>Current user logged in: @user.Name</p>
 
 <a class="btn btn-primary" href="blog">Create</a>
 
@@ -38,13 +42,28 @@ else
 @code {
     private Blog[] blogs;
 
+    private IIdentity user;
+    
+    [CascadingParameter] private Task<AuthenticationState> authenticationStateTask { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
+        await LogUserAuthenticationState();
+
+
+        
         blogs = await BlogHttpClient.GetFromJsonAsync<Blog[]>("https://localhost:7022/Blog");
     }
 
     private async Task DeleteBlog(int id)
     {
         var response = await BlogHttpClient.DeleteAsync($"https://localhost:7022/Blog/{id}");
+    }
+
+    private async Task LogUserAuthenticationState()
+    {
+        var authState = await authenticationStateTask;
+        user = authState.User.Identity;
+
     }
 }

@@ -123,8 +123,8 @@ public class BlogControllerTest
     {
         // Arrange
         var blog = new Blog { BlogId = 1 };
-        _mockService.Setup(service => service.Save(blog, It.IsAny<ClaimsPrincipal>()))
-            .Returns(Task.CompletedTask);
+        //_mockService.Setup(service => service.Save(blog, It.IsAny<ClaimsPrincipal>()))
+        //    .Returns(Task.CompletedTask);
 
         // Act
         var result = await _controller.Create(blog);
@@ -200,8 +200,8 @@ public class BlogControllerTest
         var blog = new Blog { BlogId = 1, Owner = new IdentityUser { UserName = "testUser" } };
         _mockService.Setup(service => service.GetBlog(It.IsAny<int>()))
             .Returns(blog);
-        _mockService.Setup(service => service.Save(blog, It.IsAny<ClaimsPrincipal>()))
-            .Returns(Task.CompletedTask);
+        //_mockService.Setup(service => service.Save(blog, It.IsAny<ClaimsPrincipal>()))
+        //    .Returns(Task.CompletedTask);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext 

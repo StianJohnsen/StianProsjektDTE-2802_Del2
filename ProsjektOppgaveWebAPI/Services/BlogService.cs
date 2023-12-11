@@ -41,7 +41,14 @@ public class BlogService : IBlogService
             return new List<Blog>();
         }
     }
-    
+
+
+
+    public Task<IdentityUser> howAreYou(string userName)
+    {
+        return _manager.FindByNameAsync(userName);
+    }
+
     public Blog? GetBlog(int id)
     {
         var b = (from blog in _db.Blog
@@ -52,25 +59,16 @@ public class BlogService : IBlogService
         return b;
     }
  
-    public async Task Save(Blog blog, IPrincipal principal)
+    public async Task Save(Blog blog)
     {
-        var user = await _manager.FindByNameAsync(principal.Identity?.Name);
-        if (user == null)
-        {
-            throw new ArgumentNullException(nameof(principal), "User not found");
-        }
+
 
         var existingBlog = _db.Blog.Find(blog.BlogId);
         if (existingBlog != null)
         {
-            if (existingBlog.Owner != user)
-            {
-                throw new UnauthorizedAccessException("You are not the owner of this blog.");
-            }
             _db.Entry(existingBlog).State = EntityState.Detached;
         }
 
-        blog.Owner = user;
         _db.Blog.Update(blog);
         await _db.SaveChangesAsync();
     }

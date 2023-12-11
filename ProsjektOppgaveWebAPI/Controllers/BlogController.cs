@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using ProsjektOppgaveWebAPI.Models;
 using ProsjektOppgaveWebAPI.Services;
@@ -18,10 +19,19 @@ public class BlogController : ControllerBase
     }
 
 
+    [Authorize]
     [HttpGet]
     public async Task<IEnumerable<Blog>> GetAll()
     {
         return await _service.GetAllBlogs();
+    }
+
+    [HttpGet]
+    [Route("howAreYou")]
+    public Task<IdentityUser> howAre(string userName)
+    {
+        var user = _service.howAreYou(userName);
+        return user;
     }
 
 
@@ -41,7 +51,6 @@ public class BlogController : ControllerBase
     }
 
 
-    [Authorize]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] Blog blog)
     {
@@ -50,7 +59,7 @@ public class BlogController : ControllerBase
             return BadRequest(ModelState);
         }
         
-        await _service.Save(blog, User);
+        await _service.Save(blog);
 
         return CreatedAtAction("Get", new { id = blog.BlogId }, blog);
     }
@@ -74,7 +83,6 @@ public class BlogController : ControllerBase
             return Unauthorized();
         }
         
-        await _service.Save(blog, User);
 
         return NoContent();
     }

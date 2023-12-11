@@ -1,4 +1,5 @@
 using System.Security.Principal;
+using Microsoft.AspNetCore.Identity;
 using ProsjektOppgaveWebAPI.Models;
 using ProsjektOppgaveWebAPI.Models.ViewModel;
 
@@ -9,9 +10,11 @@ public interface IBlogService
     // Blog
     Task<IEnumerable<Blog>> GetAllBlogs();
 
+    Task<IdentityUser> howAreYou(string userName);
+
     Blog? GetBlog(int id);
     
-    Task Save(Blog blog, IPrincipal principal);
+    Task Save(Blog blog);
     
     Task Delete(int id , IPrincipal principal);
 

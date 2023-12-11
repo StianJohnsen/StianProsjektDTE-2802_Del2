@@ -30,13 +30,22 @@ public class AuthStateProvider: AuthenticationStateProvider
             return _anonymous;
         }
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", token);
+        var listClaims = JwtParser.ParseClaimsFromJwt(token);
+        foreach (var VARIABLE in listClaims)
+        {
+            Console.WriteLine(VARIABLE);
+        }
         return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity(JwtParser.ParseClaimsFromJwt(token), "jwtAuthType")));
         
     }
     
     public void NotifyUserAuthentication(string userName)
     {
-        var authenticatedUser = new ClaimsPrincipal(new ClaimsIdentity(new []{new Claim(ClaimTypes.Name,userName)}, "apiauth"));
+        var authenticatedUser = new ClaimsPrincipal(new ClaimsIdentity(new []
+        {
+            new Claim(ClaimTypes.Name,userName),
+            new Claim(ClaimTypes.NameIdentifier,"Heisann"),
+        }, "apiauth"));
         var authState = Task.FromResult(new AuthenticationState(authenticatedUser));
         NotifyAuthenticationStateChanged(authState);
     }
