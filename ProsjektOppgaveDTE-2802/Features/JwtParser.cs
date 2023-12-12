@@ -14,9 +14,9 @@ public static class JwtParser
         
         var keyValuePairs = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonBytes);
 
-        keyValuePairs.TryGetValue(ClaimTypes.NameIdentifier, out object userId);
+        //keyValuePairs.TryGetValue(ClaimTypes.NameIdentifier, out object userId);
         
-        claims.Add(new Claim(ClaimTypes.NameIdentifier,userId.ToString()));
+        //claims.Add(new Claim(ClaimTypes.NameIdentifier,userId.ToString()));
         keyValuePairs.TryGetValue(ClaimTypes.Role, out object roles);
         if (roles != null)
         {

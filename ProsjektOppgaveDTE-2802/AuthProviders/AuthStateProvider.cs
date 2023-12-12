@@ -35,20 +35,20 @@ public class AuthStateProvider: AuthenticationStateProvider
         {
             Console.WriteLine(VARIABLE);
         }
+
+        Console.WriteLine(JwtParser.ParseClaimsFromJwt(token));
         return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity(JwtParser.ParseClaimsFromJwt(token), "jwtAuthType")));
         
     }
     
-    public void NotifyUserAuthentication(string userName)
+    public void NotifyUserAuthentication(string token)
     {
-        var authenticatedUser = new ClaimsPrincipal(new ClaimsIdentity(new []
-        {
-            new Claim(ClaimTypes.Name,userName),
-            new Claim(ClaimTypes.NameIdentifier,"Heisann"),
-        }, "apiauth"));
+        var authenticatedUser = new ClaimsPrincipal(new ClaimsIdentity(JwtParser.ParseClaimsFromJwt(token), "apiauth"));
         var authState = Task.FromResult(new AuthenticationState(authenticatedUser));
         NotifyAuthenticationStateChanged(authState);
     }
+    
+        
     
     public void NotifyUserLogout()
     {

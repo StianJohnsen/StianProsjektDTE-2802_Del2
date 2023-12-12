@@ -5,6 +5,7 @@
 @using System.Security.Principal
 @using System.Text.Json
 @using ProsjektOppgaveBlazor.data.Models.ViewModel
+@using System.Security.Claims
 @inject HttpClient BlogHttpClient
 @inject NavigationManager NavigationManager
 
@@ -51,7 +52,8 @@ else
     [Parameter] public int BlogId { get; set; }
 
 
-    private IIdentity user;
+    private ClaimsPrincipal user;
+    private string userId;
 
     [CascadingParameter] private Task<AuthenticationState> authenticationStateTask { get; set; }
 
@@ -64,7 +66,9 @@ else
     private async Task LogUserAuthenticationState()
     {
         var authState = await authenticationStateTask;
-        user = authState.User.Identity;
+        user = authState.User;
+        userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        Console.WriteLine(userId);
     }
 
 
@@ -104,13 +108,10 @@ else
         //blog.Owner = jsonHello;
 
         //await BlogHttpClient.PostAsJsonAsync("https://localhost:7022/Blog", blog);
-        var helloWorld = await BlogHttpClient.GetAsync($"https://localhost:7022/Blog/howAreYou?userName={user.Name}");
-        var contentHelloWorld = await helloWorld.Content.ReadAsStringAsync();
-
-        var jsonContent = JsonSerializer.Deserialize<IdentityUser>(contentHelloWorld,new JsonSerializerOptions{PropertyNameCaseInsensitive = true});
 
 
-        blog.OwnerId = jsonContent.Id;
+
+        blog.OwnerId = userId;
         var response = await BlogHttpClient.PostAsJsonAsync("https://localhost:7022/Blog", blog);
         Console.WriteLine(response);
         if (response.IsSuccessStatusCode)

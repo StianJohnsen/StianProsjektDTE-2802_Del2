@@ -35,7 +35,7 @@ public class AuthenticationService : IAuthenticationService
             return jsonAuthContent;
         }
         await _localStorageService.SetItemAsync("authToken", jsonAuthContent.token);
-        ((AuthStateProvider)_authStateProvider).NotifyUserAuthentication(loginViewModel.Username);
+        ((AuthStateProvider)_authStateProvider).NotifyUserAuthentication(jsonAuthContent.token);
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", jsonAuthContent.token);
         
         return jsonAuthContent;

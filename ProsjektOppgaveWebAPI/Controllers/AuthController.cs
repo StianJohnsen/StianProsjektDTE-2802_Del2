@@ -34,9 +34,9 @@ public class AuthController : ControllerBase
         {
             var authClaims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, user.UserName),
-                new Claim(ClaimTypes.NameIdentifier,user.Id),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new (ClaimTypes.Name, user.UserName),
+                new (ClaimTypes.NameIdentifier,user.Id),
+                new (JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             };
             var token = CreateToken(authClaims);
             await _userManager.UpdateAsync(user);
@@ -66,6 +66,7 @@ public class AuthController : ControllerBase
             UserName = model.username
         };
         var result = await _userManager.CreateAsync(user, model.password);
+        
         if (!result.Succeeded)
         {
             return StatusCode(StatusCodes.Status500InternalServerError, new Response { Success = false, Message = "User creation failed! Please check user details and try again." });

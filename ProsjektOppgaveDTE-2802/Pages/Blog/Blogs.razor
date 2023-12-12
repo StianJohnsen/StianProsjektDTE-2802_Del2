@@ -2,56 +2,71 @@
 @using ProsjektOppgaveBlazor.data.Models;
 @using System.Security.Principal
 @using System.Net.Http.Headers
+@using System.Security.Claims
 @inject HttpClient BlogHttpClient
 @inject NavigationManager NavigationManager
 
 <h3>Blogs</h3>
 
-<p>Current user logged in: @user.Name</p>
+<p>Current user: @user.Identity.Name</p>
 
 <a class="btn btn-primary" href="blog">Create</a>
 
-@if (blogs == null) 
+@if (blogs == null)
 {
-    <p><em>Loading...</em></p>
+    <p>
+        <em>Loading...</em>
+    </p>
 }
 else
 {
-    <table class="table" >
-    <thead>
-    <tr>
-        <th>Name</th>
-        <th>Owner</th>
-    </tr>
-    </thead>
-    <tbody>
-    @foreach (var blog in blogs)
-    {
+    <table class="table">
+        <thead>
         <tr>
-            <td>@blog.Name</td>
-            <td>@blog.Owner.Email</td>
-            <td><a href="posts/@blog.BlogId">View</a></td>
-            <td><a href="blog/@blog.BlogId">Edit</a></td>
-            <td><a href="blogs" @onclick="@(e =>DeleteBlog(blog.BlogId))">Delete</a></td>
+            <th>Name</th>
+            <th>Owner</th>
         </tr>
-    }
-    </tbody>
+        </thead>
+        <tbody>
+        @foreach (var blog in blogs)
+        {
+            <tr>
+                <td>@blog.Name</td>
+                <td>@blog.Owner.Email</td>
+                <td>
+                    <a href="posts/@blog.BlogId">View</a>
+                </td>
+                <td>
+                    <a href="blog/@blog.BlogId">Edit</a>
+                </td>
+                <td>
+                    <a href="blogs" @onclick="@(e => DeleteBlog(blog.BlogId))">Delete</a>
+                </td>
+            </tr>
+        }
+        </tbody>
     </table>
 }
 
 @code {
     private Blog[] blogs;
 
-    private IIdentity user;
-    
-    [CascadingParameter] private Task<AuthenticationState> authenticationStateTask { get; set; }
+    private ClaimsPrincipal user;
+
+    private string userId;
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        await LogUserAuthenticationState();
+        var authState = await authenticationStateTask;
+
+        user = authState.User;
+
+        user.FindFirstValue("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
 
 
-        
         blogs = await BlogHttpClient.GetFromJsonAsync<Blog[]>("https://localhost:7022/Blog");
     }
 
@@ -60,10 +75,7 @@ else
         var response = await BlogHttpClient.DeleteAsync($"https://localhost:7022/Blog/{id}");
     }
 
-    private async Task LogUserAuthenticationState()
-    {
-        var authState = await authenticationStateTask;
-        user = authState.User.Identity;
 
-    }
+
+
 }
