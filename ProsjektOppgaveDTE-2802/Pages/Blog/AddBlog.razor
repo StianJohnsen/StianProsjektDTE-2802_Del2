@@ -6,6 +6,7 @@
 @using System.Text.Json
 @using ProsjektOppgaveBlazor.data.Models.ViewModel
 @using System.Security.Claims
+@using Microsoft.AspNetCore.SignalR.Client
 @inject HttpClient BlogHttpClient
 @inject NavigationManager NavigationManager
 
@@ -28,7 +29,7 @@
                         <InputCheckbox class="form-check-input" @bind-Value="@Status"/>
                         <ValidationMessage For="@(() => blogViewModel.Status)"/>
                     </div>
-                    <button class="btn btn-primary" @onclick="Save" type="submit">Save</button>
+                    <button class="btn btn-primary" @onclick="Save" type="submit" disabled="@(!IsConnected)">Save</button>
 
                     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 </div>
@@ -41,6 +42,8 @@
 @code {
 
 
+    private HubConnection? hubConnection;
+
     [Parameter] public int BlogId { get; set; }
 
 
@@ -51,6 +54,13 @@
 
     protected override async Task OnInitializedAsync()
     {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/chathub"))
+            .Build();
+        
+
+
+        await hubConnection.StartAsync();
         await LogUserAuthenticationState();
     }
 
@@ -101,17 +111,35 @@
         //blog.Owner = jsonHello;
 
         //await BlogHttpClient.PostAsJsonAsync("https://localhost:7022/Blog", blog);
-
-
-
+        
         blogViewModel.OwnerId = userId;
+
+
         var response = await BlogHttpClient.PostAsJsonAsync("https://localhost:7022/Blog", blogViewModel);
         Console.WriteLine(response);
+        
         if (response.IsSuccessStatusCode)
         {
             NavigationManager.NavigateTo("/blogs");
         }
         //Console.WriteLine(response.Content);
+        
+        if (hubConnection is not null)
+        {
+            await hubConnection.SendAsync("SendMessage",blogViewModel,user.Identity.Name);
+        }
+    }
+    
+    
+    public bool IsConnected =>
+        hubConnection?.State == HubConnectionState.Connected;
+    
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
     }
 
 }

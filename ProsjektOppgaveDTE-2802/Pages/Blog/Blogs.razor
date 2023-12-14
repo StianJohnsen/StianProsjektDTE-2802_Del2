@@ -3,15 +3,27 @@
 @using System.Security.Principal
 @using System.Net.Http.Headers
 @using System.Security.Claims
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.SignalR.Client
+@using ProsjektOppgaveBlazor.data.Models.ViewModel
 @inject HttpClient BlogHttpClient
 @inject NavigationManager NavigationManager
 
 <h3>Blogs</h3>
 
-<p>Current user: @user.Identity.Name</p>
+@if (user is not null)
+{
+    <p>Current user: @user.Identity.Name</p>
+
+}
 
 <a class="btn btn-primary" href="blog">Create</a>
 
+@if (testBlogViewModel is not null)
+{
+    <p>ViewModel: @testBlogViewModel.Name</p>
+
+}
 @if (blogs == null)
 {
     <p>
@@ -53,17 +65,43 @@ else
 }
 
 @code {
-    private Blog[] blogs;
+    private HubConnection? hubConnection;
+    
+    private List<Blog> blogs;
+    
+    private BlogViewModel testBlogViewModel;
 
     private ClaimsPrincipal user;
 
     private string userId;
 
     [CascadingParameter]
-    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    private Task<AuthenticationState>? authenticationStateTask { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
+        
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/chathub"))
+            .Build();
+        
+        
+        hubConnection.On<BlogViewModel,string>("ReceiveMessage", (message1, userName) =>
+        {
+            var currentBlog = new Blog
+            {
+                BlogId = message1.BlogId,
+                Name = message1.Name,
+                Status = message1.Status,
+                OwnerId = message1.OwnerId,
+                Owner = new IdentityUser{UserName = userName}
+            };
+            blogs.Add(currentBlog);
+            InvokeAsync(StateHasChanged);
+        });
+
+        await hubConnection.StartAsync();
+        
         var authState = await authenticationStateTask;
 
         user = authState.User;
@@ -71,7 +109,26 @@ else
         userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
 
 
-        blogs = await BlogHttpClient.GetFromJsonAsync<Blog[]>("/Blog");
+        blogs = await BlogHttpClient.GetFromJsonAsync<List<Blog>>("/Blog");
+    }
+
+    private async Task Send()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.SendAsync("SendMessage");
+        }
+    }
+
+    public bool IsConnected =>
+        hubConnection?.State == HubConnectionState.Connected;
+    
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
     }
 
     private async Task DeleteBlog(int id)
