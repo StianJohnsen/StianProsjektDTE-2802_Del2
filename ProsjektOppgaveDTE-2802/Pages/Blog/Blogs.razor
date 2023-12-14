@@ -32,16 +32,20 @@ else
         {
             <tr>
                 <td>@blog.Name</td>
-                <td>@blog.Owner.Email</td>
+                <td>@blog.Owner.UserName</td>
                 <td>
                     <a href="posts/@blog.BlogId">View</a>
                 </td>
-                <td>
-                    <a href="blog/@blog.BlogId">Edit</a>
-                </td>
-                <td>
-                    <a href="blogs" @onclick="@(e => DeleteBlog(blog.BlogId))">Delete</a>
-                </td>
+                @if (blog.OwnerId == userId)
+                {
+                    <td>
+                        <a href="blog/@blog.BlogId">Edit</a>
+                    </td>
+                    <td>
+                        <a href="blogs" @onclick="@(e => DeleteBlog(blog.BlogId))">Delete</a>
+                    </td>   
+                }
+
             </tr>
         }
         </tbody>
@@ -64,15 +68,19 @@ else
 
         user = authState.User;
 
-        user.FindFirstValue("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+        userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
 
 
-        blogs = await BlogHttpClient.GetFromJsonAsync<Blog[]>("https://localhost:7022/Blog");
+        blogs = await BlogHttpClient.GetFromJsonAsync<Blog[]>("/Blog");
     }
 
     private async Task DeleteBlog(int id)
     {
-        var response = await BlogHttpClient.DeleteAsync($"https://localhost:7022/Blog/{id}");
+        var response = await BlogHttpClient.DeleteAsync($"/Blog/{id}");
+        if (response.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo("/blogs",true);
+        }
     }
 
 

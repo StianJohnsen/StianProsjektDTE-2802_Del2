@@ -1,9 +1,10 @@
 ﻿
 @page "/post/{PostId:int}"
 
-@using ProsjektOppgaveBlazor.data.Models;
-@using Microsoft.AspNetCore.Identity
+
+@using ProsjektOppgaveBlazor.data.Models.ViewModel
 @inject HttpClient BlogHttpClient
+@inject NavigationManager NavigationManager
 
 <h3>Edit post</h3>
 
@@ -15,20 +16,20 @@ else
 {
     <div class="row">
         <div class="col-md-3">
-            <EditForm Model="@post" OnValidSubmit="Save">
+            <EditForm Model="@postViewModel">
                 <DataAnnotationsValidator/>
                 <div class="form-group">
                         <div>
                             <label for="Name">Post Title:</label>
-                        <InputText class="form-control" @bind-Value="post.Title" />
-                        <ValidationMessage For="@(()=>post.Title)" />
+                        <InputText class="form-control" @bind-Value="postViewModel.Title" />
+                        <ValidationMessage For="@(()=>postViewModel.Title)" />
                         </div>
                         <div>
                             <label for="Content">Post Content:</label>
-                            <InputText class="form-control" @bind-Value="post.Content" />
-                            <ValidationMessage For="@(()=>post.Content)" />
+                            <InputText class="form-control" @bind-Value="postViewModel.Content" />
+                            <ValidationMessage For="@(()=>postViewModel.Content)" />
                         </div>
-                        <button class="btn btn-primary" type="submit">Save</button>
+                        <button class="btn btn-primary" type="submit" @onclick="Save">Save</button>
                     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 </div>
             </EditForm>
@@ -41,40 +42,31 @@ else
     [Parameter]
     public int PostId { get; set; }
 
-    private Post post;
+    private Post post = new();
+    private PostViewModel postViewModel = new();
     protected override async Task OnInitializedAsync()
     {
-        post = await BlogHttpClient.GetFromJsonAsync<Post>($"https://localhost:7022/Post/{PostId}");
+        post = await BlogHttpClient.GetFromJsonAsync<Post>($"/Post/{PostId}");
+        postViewModel.PostId = post.PostId;
+        postViewModel.BlogId = post.BlogId;
+        postViewModel.Title = post.Title;
+        postViewModel.Content = post.Content;
+        postViewModel.OwnerId = post.OwnerId;
     }
 
     private async Task Save()
     {
-        string dateStr = "2023-12-06T04:26:57.086Z";
-        DateTimeOffset lockoutEnd = DateTimeOffset.Parse(dateStr);
-        var hasher = new PasswordHasher<IdentityUser>();
-        post.OwnerId = "57365b7a-5844-4312-a38d-fbb40efbdf08";
-        post.Owner = new IdentityUser
-            {
-            UserName = "admin",
-            NormalizedUserName = "ADMIN",
-            Email = "admin@example.com",
-            NormalizedEmail = "ADMIN@EXAMPLE.COM",
-            EmailConfirmed = true,
-            PasswordHash = hasher.HashPassword(null, "AdminPassword123!"),
-            SecurityStamp = string.Empty,
-            ConcurrencyStamp = string.Empty,
-            PhoneNumber = string.Empty,
-            PhoneNumberConfirmed = false,
-            TwoFactorEnabled = false,
-                LockoutEnd = lockoutEnd,
-            LockoutEnabled = false,
-            AccessFailedCount = 0
 
+        var response = await BlogHttpClient.PutAsJsonAsync($"/Post/{PostId}", postViewModel);
 
-        };
-        var response = await BlogHttpClient.PutAsJsonAsync($"https://localhost:7022/Post/{PostId}", post);
-       
-        
+        if (response.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/posts/{post.BlogId}");
+        }
+        else
+        {
+            Console.WriteLine(response.Content.ReadAsStringAsync().Result);
+        }
     }
 
 }

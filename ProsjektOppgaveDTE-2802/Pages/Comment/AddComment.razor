@@ -1,50 +1,75 @@
-﻿@page "/comment"
+﻿@page "/addComment/{PostId}"
+@using ProsjektOppgaveBlazor.data.Models.ViewModel
+@using System.Security.Claims
 
-@using ProsjektOppgaveBlazor.data.Models;
-@using Microsoft.AspNetCore.Identity
+@inject NavigationManager NavigationManager
+
 @inject HttpClient BlogHttpClient
 
-<h3>Create post</h3>
+<h3>Create comment</h3>
 
-@if (comment == null)
-{
-    <p><em>Loading...</em></p>
-}
-else
-{
+
+
     <div class="row">
         <div class="col-md-3">
-            <EditForm Model="@comment" OnValidSubmit="Save">
+            <EditForm Model="@commentViewModel">
                 <DataAnnotationsValidator/>
                 <div class="form-group">
                     <div>
                         <label for="Name">Comment:</label>
-                        <InputText class="form-control" @bind-Value="comment.Text" />
-                        <ValidationMessage For="@(()=>comment.Text)" />
+                        <InputText class="form-control" @bind-Value="commentViewModel.Text" />
+                        <ValidationMessage For="@(()=>commentViewModel.Text)" />
                     </div>
 
-                        <button class="btn btn-primary" type="submit">Save</button>
+                        <button class="btn btn-primary" @onclick="Save" type="submit">Save</button>
                     
                     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 </div>
             </EditForm>
         </div>
     </div>
-}
+
 
 
 @code {
     [Parameter]
-    public int CommentId { get; set; }
+    public string PostId { get; set; }
+
+    private ClaimsPrincipal user;
+    private string userId;
 
 
-    private Comment comment = new Comment();
+    private Comment comment = new ();
+
+    
+    [CascadingParameter] private Task<AuthenticationState> authenticationStateTask { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await authenticationStateTask;
+        user = authState.User;
+        userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+    }
+    
+    private CommentViewModel commentViewModel = new();
+
 
 
     private async Task Save()
     {
+        
+        commentViewModel.OwnerId = userId;
 
-        var response = await BlogHttpClient.PostAsJsonAsync("https://localhost:7022/Comment", comment);
+        var response = await BlogHttpClient.PostAsJsonAsync($"/Comment/{PostId}", commentViewModel);
+
+        if (response.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"comments/{PostId}");
+        }
+        else
+        {
+            Console.WriteLine(response.Content.ReadAsStringAsync().Result);
+        }
     }
 
 }

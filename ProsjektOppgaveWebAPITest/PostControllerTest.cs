@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProsjektOppgaveWebAPI.Controllers;
 using ProsjektOppgaveWebAPI.Models;
+using ProsjektOppgaveWebAPI.Models.ViewModel;
 using ProsjektOppgaveWebAPI.Services;
 
 namespace ProsjektOppgaveWebAPITest;
@@ -64,7 +65,7 @@ public class PostControllerTest
         _controller.ModelState.AddModelError("error", "some error");
 
         // Act
-        var result = await _controller.Create(new Post());
+        var result = await _controller.Create(1, new PostViewModel());
 
         // Assert
         Assert.IsType<BadRequestObjectResult>(result);
@@ -74,12 +75,12 @@ public class PostControllerTest
     public async Task Create_ReturnsBadRequest_WhenBlogIsClosed()
     {
         // Arrange
-        var post = new Post { BlogId = 1 };
+        var postViewModel = new PostViewModel { BlogId = 1 };
         var blog = new Blog { Status = 1 };
-        _serviceMock.Setup(service => service.GetBlog(post.BlogId)).Returns(blog);
+        _serviceMock.Setup(service => service.GetBlog(postViewModel.BlogId)).Returns(blog);
 
         // Act
-        var result = await _controller.Create(post);
+        var result = await _controller.Create(1,postViewModel);
 
         // Assert
         Assert.IsType<BadRequestObjectResult>(result);
@@ -89,17 +90,19 @@ public class PostControllerTest
     public async Task Create_ReturnsCreatedAtAction_WhenModelStateIsValidAndBlogIsOpen()
     {
         // Arrange
+        var postViewModel = new PostViewModel { BlogId = 1 };
         var post = new Post { BlogId = 1 };
+
         var blog = new Blog { Status = 0 };
-        _serviceMock.Setup(service => service.GetBlog(post.BlogId)).Returns(blog);
+        _serviceMock.Setup(service => service.GetBlog(postViewModel.BlogId)).Returns(blog);
 
         // Act
-        var result = await _controller.Create(post);
+        var result = await _controller.Create(1,postViewModel);
 
         // Assert
         var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(result);
         Assert.Equal("GetPosts", createdAtActionResult.ActionName);
-        Assert.Equal(post, createdAtActionResult.Value);
+        Assert.Equal(postViewModel, createdAtActionResult.Value);
         _serviceMock.Verify(x => x.SavePost(post, It.IsAny<ClaimsPrincipal>()), Times.Once);
     }
 
@@ -111,9 +114,10 @@ public class PostControllerTest
     {
         // Arrange
         var post = new Post { PostId = 1 };
+        var postViewModel = new PostViewModel { PostId = 1 };
 
         // Act
-        var result = _controller.Update(2, post);
+        var result = _controller.Update(2, postViewModel);
 
         // Assert
         Assert.IsType<BadRequestResult>(result);
@@ -124,10 +128,12 @@ public class PostControllerTest
     {
         // Arrange
         var post = new Post { PostId = 1 };
+        var postViewModel = new PostViewModel { PostId = 1 };
+
         _serviceMock.Setup(service => service.GetPost(post.PostId)).Returns((Post)null);
 
         // Act
-        var result = _controller.Update(1, post);
+        var result = _controller.Update(1, postViewModel);
 
         // Assert
         Assert.IsType<NotFoundResult>(result);
@@ -138,6 +144,7 @@ public class PostControllerTest
     {
         // Arrange
         var post = new Post { PostId = 1, OwnerId = "user1" };
+        var postViewModel = new PostViewModel { PostId = 1, OwnerId = "user1" };
         var existingPost = new Post { PostId = 1, OwnerId = "user2" };
         _serviceMock.Setup(service => service.GetPost(post.PostId)).Returns(existingPost);
 
@@ -153,7 +160,7 @@ public class PostControllerTest
         };
 
         // Act
-        var result = _controller.Update(1, post);
+        var result = _controller.Update(1, postViewModel);
 
         // Assert
         Assert.IsType<UnauthorizedResult>(result);
@@ -164,6 +171,8 @@ public class PostControllerTest
     {
         // Arrange
         var post = new Post { PostId = 1, OwnerId = "user1" };
+        var postViewModel = new PostViewModel { PostId = 1, OwnerId = "user1" };
+
         var existingPost = new Post { PostId = 1, OwnerId = "user1" };
         _serviceMock.Setup(service => service.GetPost(post.PostId)).Returns(existingPost);
 
@@ -179,7 +188,7 @@ public class PostControllerTest
         };
 
         // Act
-        var result = _controller.Update(1, post);
+        var result = _controller.Update(1, postViewModel);
 
         // Assert
         Assert.IsType<NoContentResult>(result);

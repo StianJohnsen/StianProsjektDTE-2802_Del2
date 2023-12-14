@@ -1,7 +1,9 @@
-﻿@page "/post"
+﻿@page "/addpost/{BlogId}"
+@using ProsjektOppgaveBlazor.data.Models.ViewModel
+@using System.Security.Claims
+@inject NavigationManager NavigationManager
 
-@using ProsjektOppgaveBlazor.data.Models;
-@using Microsoft.AspNetCore.Identity
+
 @inject HttpClient BlogHttpClient
 
 <h3>Create post</h3>
@@ -14,25 +16,27 @@ else
 {
     <div class="row">
         <div class="col-md-3">
-            <EditForm Model="@post" OnValidSubmit="Save">
+            <EditForm Model="@postViewModel">
                 <DataAnnotationsValidator/>
                 <div class="form-group">
                     <div>
                         <label for="Name">Post title:</label>
-                        <InputText class="form-control" @bind-Value="post.Title" />
-                        <ValidationMessage For="@(()=>post.Title)" />
+                        <InputText class="form-control" @bind-Value="postViewModel.Title" />
+                        <ValidationMessage For="@(()=>postViewModel.Title)" />
                     </div>
                     <div>
                         <label for="Name">Post content:</label>
-                        <InputText class="form-control" @bind-Value="post.Content" />
-                        <ValidationMessage For="@(()=>post.Content)" />
+                        <InputText class="form-control" @bind-Value="postViewModel.Content" />
+                        <ValidationMessage For="@(()=>postViewModel.Content)" />
                     </div>
                         
-                        <button class="btn btn-primary" type="submit">Save</button>
+                    <button class="btn btn-primary" @onclick="Save" type="submit">Save</button>
                     
                     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 </div>
             </EditForm>
+            
+            <p>@errorMessage</p>
         </div>
     </div>
 }
@@ -40,42 +44,42 @@ else
 
 @code {
     [Parameter]
-    public int PostId { get; set; }
+    public string BlogId { get; set; }
 
 
+    private ClaimsPrincipal user;
+    private string userId;
     private Post post = new Post();
+    
+    private string errorMessage = string.Empty;
+    
+    [CascadingParameter] private Task<AuthenticationState> authenticationStateTask { get; set; }
+    
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await authenticationStateTask;
+        user = authState.User;
+        userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+    }
+
+    private PostViewModel postViewModel = new();
 
 
     private async Task Save()
     {
+
+        postViewModel.OwnerId = userId;
         
-        string dateStr = "2023-12-06T04:26:57.086Z";
-        DateTimeOffset lockoutEnd = DateTimeOffset.Parse(dateStr);
-        var hasher = new PasswordHasher<IdentityUser>();
-        post.OwnerId = "57365b7a-5844-4312-a38d-fbb40efbdf08";
-        post.Owner = new IdentityUser
-            {
-            UserName = "admin",
-            NormalizedUserName = "ADMIN",
-            Email = "admin@example.com",
-            NormalizedEmail = "ADMIN@EXAMPLE.COM",
-            EmailConfirmed = true,
-            PasswordHash = hasher.HashPassword(null, "AdminPassword123!"),
-            SecurityStamp = string.Empty,
-            ConcurrencyStamp = string.Empty,
-            PhoneNumber = string.Empty,
-            PhoneNumberConfirmed = false,
-            TwoFactorEnabled = false,
-            LockoutEnd = lockoutEnd,
-            LockoutEnabled = false,
-            AccessFailedCount = 0
+        var response = await BlogHttpClient.PostAsJsonAsync($"/post/{BlogId}", postViewModel);
 
-
-        };
-
-
-        var response = await BlogHttpClient.PostAsJsonAsync("https://localhost:7022/post", post);
-
+        if (response.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/posts/{BlogId}");
+        }
+        else
+        {
+            errorMessage = response.Content.ReadAsStringAsync().Result;
+        }
 
     }
 

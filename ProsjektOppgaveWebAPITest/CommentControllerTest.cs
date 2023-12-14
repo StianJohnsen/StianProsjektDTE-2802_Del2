@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProsjektOppgaveWebAPI.Controllers;
 using ProsjektOppgaveWebAPI.Models;
+using ProsjektOppgaveWebAPI.Models.ViewModel;
 using ProsjektOppgaveWebAPI.Services.CommentServices;
 
 namespace ProsjektOppgaveWebAPITest;
@@ -61,10 +62,11 @@ public class CommentControllerTest
     public async Task Create_ReturnsBadRequest_WhenModelStateIsInvalid()
     {
         // Arrange
+        var commentViewModel = new CommentViewModel();
         _controller.ModelState.AddModelError("error", "some error");
 
         // Act
-        var result = await _controller.Create(new Comment());
+        var result = await _controller.Create(commentViewModel.PostId, commentViewModel);
 
         // Assert
         Assert.IsType<BadRequestObjectResult>(result);
@@ -75,6 +77,7 @@ public class CommentControllerTest
     {
         // Arrange
         var comment = new Comment();
+        var commentViewModel = new CommentViewModel();
 
         // Mock User
         var user = new ClaimsPrincipal(new ClaimsIdentity(new Claim[]
@@ -88,7 +91,7 @@ public class CommentControllerTest
         };
 
         // Act
-        var result = await _controller.Create(comment);
+        var result = await _controller.Create(commentViewModel.PostId, commentViewModel);
 
         // Assert
         var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(result);
@@ -105,9 +108,10 @@ public class CommentControllerTest
     {
         // Arrange
         var comment = new Comment { CommentId = 1 };
+        var commentViewModel = new CommentViewModel { CommentId = 1 };
 
         // Act
-        var result = _controller.Update(2, comment);
+        var result = _controller.Update(2, commentViewModel);
 
         // Assert
         Assert.IsType<BadRequestResult>(result);
@@ -118,10 +122,11 @@ public class CommentControllerTest
     {
         // Arrange
         var comment = new Comment { CommentId = 1 };
+        var commentViewModel = new CommentViewModel { CommentId = 1 };
         _serviceMock.Setup(service => service.GetComment(comment.CommentId)).Returns((Comment)null);
 
         // Act
-        var result = _controller.Update(1, comment);
+        var result = _controller.Update(1, commentViewModel);
 
         // Assert
         Assert.IsType<NotFoundResult>(result);
@@ -133,6 +138,9 @@ public class CommentControllerTest
         // Arrange
         var comment = new Comment { CommentId = 1, OwnerId = "user1" };
         var existingComment = new Comment { CommentId = 1, OwnerId = "user2" };
+        
+        var commentViewModel = new CommentViewModel { CommentId = 1, OwnerId = "user1" };
+        
         _serviceMock.Setup(service => service.GetComment(comment.CommentId)).Returns(existingComment);
 
         // Mock User
@@ -147,7 +155,7 @@ public class CommentControllerTest
         };
 
         // Act
-        var result = _controller.Update(1, comment);
+        var result = _controller.Update(1, commentViewModel);
 
         // Assert
         Assert.IsType<UnauthorizedResult>(result);
@@ -158,6 +166,8 @@ public class CommentControllerTest
     {
         // Arrange
         var comment = new Comment { CommentId = 1, OwnerId = "user1" };
+        var commentViewModel = new CommentViewModel { CommentId = 1, OwnerId = "user1" };
+
         var existingComment = new Comment { CommentId = 1, OwnerId = "user1" };
         _serviceMock.Setup(service => service.GetComment(comment.CommentId)).Returns(existingComment);
 
@@ -173,7 +183,7 @@ public class CommentControllerTest
         };
 
         // Act
-        var result = _controller.Update(1, comment);
+        var result = _controller.Update(1, commentViewModel);
 
         // Assert
         Assert.IsType<NoContentResult>(result);

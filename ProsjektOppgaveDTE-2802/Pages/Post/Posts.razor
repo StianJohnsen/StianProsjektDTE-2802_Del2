@@ -1,11 +1,20 @@
 ﻿@page "/posts/{BlogId}"
 @using ProsjektOppgaveBlazor.data.Models;
+@using System.Security.Claims
 @inject HttpClient BlogHttpClient
 @inject NavigationManager NavigationManager
 
 <h3>Posts</h3>
 
-<a class="btn btn-primary" href="post">Create</a>
+@if (blog != null)
+{
+    @if (blog.Status == 1)
+    {
+        <a class="btn btn-primary" href="addpost/@blog.BlogId">Create</a>
+    } 
+}
+
+
 
 @if (posts == null) 
 {
@@ -18,6 +27,7 @@ else
     <tr>
         <th>Title</th>
         <th>Content</th>
+        <th>Owner</th>
     </tr>
     </thead>
     <tbody>
@@ -26,9 +36,14 @@ else
         <tr>
             <td>@post.Title</td>
             <td>@post.Content</td>
+            <td>@post.Owner.UserName</td>
             <td><a href="comments/@post.PostId">View</a></td>
-            <td><a href="post/@post.PostId">Edit</a></td>
-            <td><a href="posts" @onclick="@(e =>DeleteBlog(post.PostId))">Delete</a></td>
+            @if (post.OwnerId == userId)
+            {
+                <td><a href="post/@post.PostId">Edit</a></td>
+                <td><a href="posts/@post.BlogId" @onclick="@(e =>DeletePost(post.PostId))">Delete</a></td>
+            }
+
         </tr>
     }
     </tbody>
@@ -39,14 +54,37 @@ else
     [Parameter]
     public string BlogId { get; set; }
     private Post[] posts;
+    private Blog blog;
+
+    private ClaimsPrincipal user;
+
+    private string userId;
+    
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        posts = await BlogHttpClient.GetFromJsonAsync<Post[]>($"https://localhost:7022/Post?blogId={BlogId}");
+        var authState = await authenticationStateTask;
+        
+        user = authState.User;
+        
+        userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        
+        posts = await BlogHttpClient.GetFromJsonAsync<Post[]>($"/Post?blogId={BlogId}");
+        blog = await BlogHttpClient.GetFromJsonAsync<Blog>($"/Blog/{BlogId}");
     }
 
-    private async Task DeleteBlog(int id)
+    private async Task DeletePost(int id)
     {
-        var response = await BlogHttpClient.DeleteAsync($"https://localhost:7022/Post/{id}");
+        var response = await BlogHttpClient.DeleteAsync($"/Post/{id}");
+        if (response.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/posts/{BlogId}",true);
+        }
+        else
+        {
+            Console.WriteLine($"Error: {response.Content.ReadAsStringAsync().Result}");
+        }
     }
 }

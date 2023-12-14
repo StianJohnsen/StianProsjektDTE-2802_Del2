@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProsjektOppgaveWebAPI.Models;
+using ProsjektOppgaveWebAPI.Models.ViewModel;
 using ProsjektOppgaveWebAPI.Services.CommentServices;
 
 namespace ProsjektOppgaveWebAPI.Controllers;
@@ -33,24 +34,31 @@ public class CommentController : ControllerBase
     
     
     [Authorize]
-    [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Comment comment)
+    [HttpPost("{postId:int}")]
+    public async Task<IActionResult> Create([FromRoute] int postId,[FromBody] CommentViewModel commentViewModel)
     {
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
         }
-        
+
+        var comment = new Comment
+        {
+            CommentId = commentViewModel.CommentId,
+            Text = commentViewModel.Text,
+            OwnerId = commentViewModel.OwnerId,
+            PostId = postId
+        };
         await _service.Save(comment, User);
-        return CreatedAtAction("GetComment", new { id = comment.PostId }, comment);
+        return CreatedAtAction("GetComment", new { id = postId }, commentViewModel);
     }
     
     
     [Authorize]
     [HttpPut("{id:int}")]
-    public IActionResult Update([FromRoute] int id, [FromBody] Comment comment)
+    public IActionResult Update([FromRoute] int id, [FromBody] CommentViewModel commentViewModel)
     {
-        if (id != comment.CommentId)
+        if (id != commentViewModel.CommentId)
             return BadRequest();
 
         var existingComment = _service.GetComment(id);
@@ -62,6 +70,14 @@ public class CommentController : ControllerBase
         {
             return Unauthorized();
         }
+        
+        var comment = new Comment
+        {
+            CommentId = commentViewModel.CommentId,
+            Text = commentViewModel.Text,
+            OwnerId = commentViewModel.OwnerId,
+            PostId = commentViewModel.PostId
+        };
 
         _service.Save(comment, User);
 

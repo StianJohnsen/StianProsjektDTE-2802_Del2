@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProsjektOppgaveWebAPI.Controllers;
 using ProsjektOppgaveWebAPI.Models;
+using ProsjektOppgaveWebAPI.Models.ViewModel;
 using ProsjektOppgaveWebAPI.Services;
 
 namespace ProsjektOppgaveWebAPITest;
@@ -112,7 +113,7 @@ public class BlogControllerTest
         _controller.ModelState.AddModelError("error", "some error");
 
         // Act
-        var result = await _controller.Create(new Blog());
+        var result = await _controller.Create(new BlogViewModel());
 
         // Assert
         Assert.IsType<BadRequestObjectResult>(result);
@@ -122,17 +123,17 @@ public class BlogControllerTest
     public async Task Create_ReturnsCreatedAtAction_WhenSuccessful()
     {
         // Arrange
-        var blog = new Blog { BlogId = 1 };
+        var blogViewModel = new BlogViewModel() { BlogId = 1 };
         //_mockService.Setup(service => service.Save(blog, It.IsAny<ClaimsPrincipal>()))
         //    .Returns(Task.CompletedTask);
 
         // Act
-        var result = await _controller.Create(blog);
+        var result = await _controller.Create(blogViewModel);
 
         // Assert
         var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(result);
         Assert.Equal("Get", createdAtActionResult.ActionName);
-        Assert.Equal(blog, createdAtActionResult.Value);
+        Assert.Equal(blogViewModel, createdAtActionResult.Value);
     }
 
     
@@ -142,10 +143,10 @@ public class BlogControllerTest
     public async Task Update_ReturnsBadRequest_WhenIdDoesNotMatchBlogId()
     {
         // Arrange
-        var blog = new Blog { BlogId = 1 };
+        var blogViewModel = new BlogViewModel { BlogId = 1 };
 
         // Act
-        var result = await _controller.Update(2, blog);
+        var result = await _controller.Update(2, blogViewModel);
 
         // Assert
         Assert.IsType<BadRequestResult>(result);
@@ -155,12 +156,12 @@ public class BlogControllerTest
     public async Task Update_ReturnsNotFound_WhenBlogDoesNotExist()
     {
         // Arrange
-        var blog = new Blog { BlogId = 1 };
+        var blogViewModel = new BlogViewModel { BlogId = 1 };
         _mockService.Setup(service => service.GetBlog(It.IsAny<int>()))
             .Returns((Blog)null);
 
         // Act
-        var result = await _controller.Update(1, blog);
+        var result = await _controller.Update(1, blogViewModel);
 
         // Assert
         Assert.IsType<NotFoundResult>(result);
@@ -171,6 +172,7 @@ public class BlogControllerTest
     {
         // Arrange
         const string userId = "otherUserId";
+        var blogViewModel = new BlogViewModel();
         var blog = new Blog { BlogId = 1, Owner = new IdentityUser { Id = userId, UserName = "otherUser" } };
         _mockService.Setup(service => service.GetBlog(It.IsAny<int>()))
             .Returns(blog);
@@ -186,7 +188,7 @@ public class BlogControllerTest
         };
 
         // Act
-        var result = await _controller.Update(1, blog);
+        var result = await _controller.Update(1, blogViewModel);
 
         // Assert
         Assert.IsType<UnauthorizedResult>(result);
@@ -197,6 +199,7 @@ public class BlogControllerTest
     public async Task Update_ReturnsNoContent_WhenSuccessful()
     {
         // Arrange
+        var blogViewModel = new BlogViewModel();
         var blog = new Blog { BlogId = 1, Owner = new IdentityUser { UserName = "testUser" } };
         _mockService.Setup(service => service.GetBlog(It.IsAny<int>()))
             .Returns(blog);
@@ -214,7 +217,7 @@ public class BlogControllerTest
         };
 
         // Act
-        var result = await _controller.Update(1, blog);
+        var result = await _controller.Update(1, blogViewModel);
 
         // Assert
         Assert.IsType<NoContentResult>(result);

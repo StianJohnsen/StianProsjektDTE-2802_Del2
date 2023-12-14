@@ -1,8 +1,9 @@
 ﻿
 @page "/comment/{CommentId:int}"
-@using ProsjektOppgaveBlazor.data.Models;
-@using Microsoft.AspNetCore.Identity
+@using ProsjektOppgaveBlazor.data.Models.ViewModel
+
 @inject HttpClient BlogHttpClient
+@inject NavigationManager NavigationManager
 
 <h3>Edit comment</h3>
 
@@ -14,15 +15,15 @@ else
 {
     <div class="row">
         <div class="col-md-3">
-            <EditForm Model="@comment" OnValidSubmit="Save">
+            <EditForm Model="@commentViewModel">
                 <DataAnnotationsValidator/>
                 <div class="form-group">
                         <div>
                             <label for="Name">Comment:</label>
-                        <InputText class="form-control" @bind-Value="comment.Text" />
-                        <ValidationMessage For="@(()=>comment.Text)" />
+                        <InputText class="form-control" @bind-Value="commentViewModel.Text" />
+                        <ValidationMessage For="@(()=>commentViewModel.Text)" />
                         </div>
-                        <button class="btn btn-primary" type="submit">Save</button>
+                        <button class="btn btn-primary" type="submit" @onclick="Save">Save</button>
                     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 </div>
             </EditForm>
@@ -35,15 +36,31 @@ else
     [Parameter]
     public int CommentId { get; set; }
 
-    private Comment comment;
+    private Comment comment = new();
+
+    private CommentViewModel commentViewModel = new();
     protected override async Task OnInitializedAsync()
     {
-        comment = await BlogHttpClient.GetFromJsonAsync<Comment>($"https://localhost:7022/Comment/{CommentId}");
+        comment = await BlogHttpClient.GetFromJsonAsync<Comment>($"/Comment/{CommentId}");
+        commentViewModel.CommentId = comment.CommentId;
+        commentViewModel.PostId = comment.PostId;
+        commentViewModel.Text = comment.Text;
+        commentViewModel.OwnerId = comment.OwnerId;
     }
     
     private async Task Save()
     {
-        var response = await BlogHttpClient.PutAsJsonAsync($"https://localhost:7022/Comment/{CommentId}", comment);
+        var response = await BlogHttpClient.PutAsJsonAsync($"/Comment/{CommentId}", commentViewModel);
+        if (response.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/comments/{comment.PostId}");
+        }
+        else
+        {
+            Console.WriteLine(response.Content.ReadAsStringAsync().Result);
+
+        }
+        
     }
 
 }

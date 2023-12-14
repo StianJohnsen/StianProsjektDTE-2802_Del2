@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProsjektOppgaveWebAPI.Models;
+using ProsjektOppgaveWebAPI.Models.ViewModel;
 using ProsjektOppgaveWebAPI.Services;
 
 namespace ProsjektOppgaveWebAPI.Controllers;
@@ -33,27 +34,37 @@ public class PostController : ControllerBase
     
     
     [Authorize]
-    [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Post post)
+    [HttpPost("{blogId:int}")]
+    public async Task<IActionResult> Create([FromRoute] int blogId,[FromBody] PostViewModel postViewModel)
     {
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
         }
 
-        var blog = _service.GetBlog(post.BlogId);
-        if (blog != null && blog.Status != 0) return BadRequest("This blog is closed for new posts and comments!");
+        var blog = _service.GetBlog(blogId);
+
+        var post = new Post
+        {
+            PostId = postViewModel.PostId,
+            Title = postViewModel.Title,
+            Content = postViewModel.Content,
+            OwnerId = postViewModel.OwnerId,
+            BlogId = blogId
+
+        };
+        if (blog != null && blog.Status == 0) return BadRequest("This blog is closed for new posts and comments!");
         
         await _service.SavePost(post, User);
-        return CreatedAtAction("GetPosts", new { id = post.BlogId }, post);
+        return CreatedAtAction("GetPosts", new { id = blogId }, post);
     }
 
     
     [Authorize]
     [HttpPut("{id:int}")]
-    public IActionResult Update([FromRoute] int id, [FromBody] Post post)
+    public IActionResult Update([FromRoute] int id, [FromBody] PostViewModel postViewModel)
     {
-        if (id != post.PostId)
+        if (id != postViewModel.PostId)
             return BadRequest();
 
         var existingPost = _service.GetPost(id);
@@ -65,6 +76,15 @@ public class PostController : ControllerBase
         {
             return Unauthorized();
         }
+
+        var post = new Post
+        {
+            PostId = postViewModel.PostId,
+            Title = postViewModel.Title,
+            Content = postViewModel.Content,
+            OwnerId = postViewModel.OwnerId,
+            BlogId = postViewModel.BlogId
+        };
         
         _service.SavePost(post, User);
 

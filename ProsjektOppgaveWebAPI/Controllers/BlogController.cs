@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using ProsjektOppgaveWebAPI.Models;
+using ProsjektOppgaveWebAPI.Models.ViewModel;
 using ProsjektOppgaveWebAPI.Services;
 
 namespace ProsjektOppgaveWebAPI.Controllers;
@@ -52,12 +53,21 @@ public class BlogController : ControllerBase
 
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Blog blog)
+    public async Task<IActionResult> Create([FromBody] BlogViewModel blogViewModel)
     {
+        
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
         }
+
+        var blog = new Blog
+        {
+            BlogId = blogViewModel.BlogId,
+            Name = blogViewModel.Name,
+            Status = blogViewModel.Status,
+            OwnerId = blogViewModel.OwnerId
+        };
         
         await _service.Save(blog);
 
@@ -67,23 +77,31 @@ public class BlogController : ControllerBase
 
     [Authorize]
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update([FromRoute] int id, [FromBody] Blog blog)
+    public async Task<IActionResult> Update([FromRoute] int id, [FromBody] BlogViewModel blogViewModel)
     {
-        if (id != blog.BlogId)
+        if (id != blogViewModel.BlogId)
             return BadRequest();
 
-        var existingBlog = _service.GetBlog(id);
+        var existingBlogViewModel = _service.GetBlog(id);
         
-        if (existingBlog is null)
+        if (existingBlogViewModel is null)
             return NotFound();
         
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (existingBlog.OwnerId != userId)
+        if (existingBlogViewModel.OwnerId != userId)
         {
             return Unauthorized();
         }
         
-
+        var blog = new Blog
+        {
+            BlogId = blogViewModel.BlogId,
+            Name = blogViewModel.Name,
+            Status = blogViewModel.Status,
+            OwnerId = blogViewModel.OwnerId
+        };
+        
+        await _service.Save(blog);
         return NoContent();
     }
 

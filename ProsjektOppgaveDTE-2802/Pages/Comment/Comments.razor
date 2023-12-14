@@ -1,11 +1,14 @@
 ﻿@page "/comments/{PostId}"
-@using ProsjektOppgaveBlazor.data.Models;
+@using System.Security.Claims
 @inject HttpClient BlogHttpClient
 @inject NavigationManager NavigationManager
 
 <h3>Comments</h3>
 
-<a class="btn btn-primary" href="comment">Create</a>
+@if (post != null)
+{
+    <a class="btn btn-primary" href="addComment/@post.PostId">Create</a>
+}
 
 @if (comments == null) 
 {
@@ -26,8 +29,12 @@ else
         <tr>
             <td>@comment.Text</td>
             <td>@comment.Owner.Email</td>
+            @if(comment.OwnerId == userId)
+        {
             <td><a href="comment/@comment.CommentId">Edit</a></td>
-            <td><a href="comments" @onclick="@(e =>DeleteBlog(comment.PostId))">Delete</a></td>
+            <td><a href="comments/@comment.PostId" @onclick="@(e =>DeleteBlog(comment.CommentId))">Delete</a></td>
+        }
+
         </tr>
     }
     </tbody>
@@ -38,14 +45,40 @@ else
     [Parameter]
     public string PostId { get; set; }
     private Comment[] comments;
+    private Post post;
+
+    private ClaimsPrincipal user;
+
+    private string userId;
+    
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        comments = await BlogHttpClient.GetFromJsonAsync<Comment[]>($"https://localhost:7022/Comment?postId={PostId}");
+        var authState = await authenticationStateTask;
+
+        user = authState.User;
+        
+        userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        
+        
+        comments = await BlogHttpClient.GetFromJsonAsync<Comment[]>($"/Comment?postId={PostId}");
+        post = await BlogHttpClient.GetFromJsonAsync<Post>($"/Post/{PostId}");
+
     }
 
     private async Task DeleteBlog(int id)
     {
-        var response = await BlogHttpClient.DeleteAsync($"https://localhost:7022/Comment/{id}");
+        var response = await BlogHttpClient.DeleteAsync($"/Comment/{id}");
+        if (response.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/comments/{PostId}",true);
+        }
+        else
+        {
+            Console.WriteLine($"Error: {response.Content.ReadAsStringAsync().Result}");
+
+        }
     }
 }
