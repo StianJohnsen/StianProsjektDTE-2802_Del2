@@ -1,6 +1,6 @@
-namespace ProsjektOppgaveBlazor.data.Models;
+﻿namespace ProsjektOppgaveWebAPI.Models.ViewModel;
 
-public class Tag
+public class TagViewModel
 {
     public int Id { get; set; }
     public string content { get; set; }

@@ -1,6 +1,7 @@
 ﻿@page "/posts/{BlogId}"
 @using ProsjektOppgaveBlazor.data.Models;
 @using System.Security.Claims
+@using Microsoft.AspNetCore.SignalR.Client
 @inject HttpClient BlogHttpClient
 @inject NavigationManager NavigationManager
 
@@ -37,7 +38,7 @@ else
             <td>@post.Title</td>
             <td>@post.Content</td>
             <td>@post.Owner.UserName</td>
-            <td><a href="comments/@post.PostId">View</a></td>
+            <td><a href="comments/@post.PostId">Comments</a></td>
             @if (post.OwnerId == userId)
             {
                 <td><a href="post/@post.PostId">Edit</a></td>
@@ -53,9 +54,11 @@ else
 @code {
     [Parameter]
     public string BlogId { get; set; }
-    private Post[] posts;
+    private List<Post> posts;
     private Blog blog;
-
+    
+    private HubConnection? HubConnection;
+    
     private ClaimsPrincipal user;
 
     private string userId;
@@ -65,13 +68,45 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        
+        HubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/postHub"))
+            .Build();
+
+        HubConnection.On<Post>("ReceiveCreatePost", (currentPost) =>
+        {
+            posts.Add(currentPost);
+            InvokeAsync(StateHasChanged);
+        });
+        
+        HubConnection.On<Post>("ReceiveEditPost", (currentPost) =>
+        {
+            var index = posts.FindIndex(x => x.PostId == currentPost.PostId);
+            if (index != -1)
+            {
+                posts[index] = currentPost;
+            }
+            InvokeAsync(StateHasChanged);
+        });
+        
+        HubConnection.On<int>("ReceiveDeletePost", (currentPostId) =>
+        {
+         
+            var postToBeRemoved = posts.Find(x => x.PostId == currentPostId);
+            posts.Remove(postToBeRemoved);
+            InvokeAsync(StateHasChanged);
+        });
+        
+        await HubConnection.StartAsync();
+
+        
         var authState = await authenticationStateTask;
         
         user = authState.User;
         
         userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
         
-        posts = await BlogHttpClient.GetFromJsonAsync<Post[]>($"/Post?blogId={BlogId}");
+        posts = await BlogHttpClient.GetFromJsonAsync<List<Post>>($"/Post?blogId={BlogId}");
         blog = await BlogHttpClient.GetFromJsonAsync<Blog>($"/Blog/{BlogId}");
     }
 
@@ -80,7 +115,11 @@ else
         var response = await BlogHttpClient.DeleteAsync($"/Post/{id}");
         if (response.IsSuccessStatusCode)
         {
-            NavigationManager.NavigateTo($"/posts/{BlogId}",true);
+            if (HubConnection is not null)
+            {
+                await HubConnection.SendAsync("SendDeletePost", id);
+            }
+            NavigationManager.NavigateTo($"/posts/{BlogId}");
         }
         else
         {

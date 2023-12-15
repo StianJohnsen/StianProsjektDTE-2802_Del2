@@ -42,7 +42,7 @@
 @code {
 
 
-    private HubConnection? hubConnection;
+    private HubConnection? HubConnection;
 
     [Parameter] public int BlogId { get; set; }
 
@@ -54,13 +54,13 @@
 
     protected override async Task OnInitializedAsync()
     {
-        hubConnection = new HubConnectionBuilder()
-            .WithUrl(NavigationManager.ToAbsoluteUri("/chathub"))
+        HubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/blogHub"))
             .Build();
         
 
 
-        await hubConnection.StartAsync();
+        await HubConnection.StartAsync();
         await LogUserAuthenticationState();
     }
 
@@ -121,24 +121,27 @@
         if (response.IsSuccessStatusCode)
         {
             NavigationManager.NavigateTo("/blogs");
+            var currentBlog = await response.Content.ReadFromJsonAsync<Blog>();
+            if (HubConnection is not null)
+            {
+                await HubConnection.SendAsync("SendCreateBlog",currentBlog);
+            }
+            
         }
         //Console.WriteLine(response.Content);
-        
-        if (hubConnection is not null)
-        {
-            await hubConnection.SendAsync("SendMessage",blogViewModel,user.Identity.Name);
-        }
+
+
     }
     
     
     public bool IsConnected =>
-        hubConnection?.State == HubConnectionState.Connected;
+        HubConnection?.State == HubConnectionState.Connected;
     
     public async ValueTask DisposeAsync()
     {
-        if (hubConnection is not null)
+        if (HubConnection is not null)
         {
-            await hubConnection.DisposeAsync();
+            await HubConnection.DisposeAsync();
         }
     }
 

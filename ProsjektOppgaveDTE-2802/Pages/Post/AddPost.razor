@@ -1,6 +1,7 @@
 ﻿@page "/addpost/{BlogId}"
 @using ProsjektOppgaveBlazor.data.Models.ViewModel
 @using System.Security.Claims
+@using Microsoft.AspNetCore.SignalR.Client
 @inject NavigationManager NavigationManager
 
 
@@ -30,7 +31,7 @@ else
                         <ValidationMessage For="@(()=>postViewModel.Content)" />
                     </div>
                         
-                    <button class="btn btn-primary" @onclick="Save" type="submit">Save</button>
+                    <button class="btn btn-primary" @onclick="Save" type="submit" disabled="@(!IsConnected)">Save</button>
                     
                     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 </div>
@@ -47,6 +48,7 @@ else
     public string BlogId { get; set; }
 
 
+    private HubConnection? HubConnection;
     private ClaimsPrincipal user;
     private string userId;
     private Post post = new Post();
@@ -57,6 +59,12 @@ else
     
     protected override async Task OnInitializedAsync()
     {
+        HubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/postHub"))
+            .Build();
+        
+        await HubConnection.StartAsync();
+        
         var authState = await authenticationStateTask;
         user = authState.User;
         userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -75,6 +83,11 @@ else
         if (response.IsSuccessStatusCode)
         {
             NavigationManager.NavigateTo($"/posts/{BlogId}");
+            var currentPost = await response.Content.ReadFromJsonAsync<Post>();
+            if (HubConnection is not null)
+            {
+                await HubConnection.SendAsync("SendCreatePost", currentPost);
+            }
         }
         else
         {
@@ -83,4 +96,15 @@ else
 
     }
 
+    public bool IsConnected =>
+        HubConnection?.State == HubConnectionState.Connected;
+
+
+    private async ValueTask DisposeAsync()
+    {
+        if (HubConnection is not null)
+        {
+            await HubConnection.DisposeAsync();
+        }
+    }
 }

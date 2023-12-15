@@ -1,6 +1,7 @@
 ﻿
 @page "/comment/{CommentId:int}"
 @using ProsjektOppgaveBlazor.data.Models.ViewModel
+@using Microsoft.AspNetCore.SignalR.Client
 
 @inject HttpClient BlogHttpClient
 @inject NavigationManager NavigationManager
@@ -38,6 +39,8 @@ else
 
     private Comment comment = new();
 
+    private HubConnection? HubConnection;
+
     private CommentViewModel commentViewModel = new();
     protected override async Task OnInitializedAsync()
     {
@@ -46,6 +49,12 @@ else
         commentViewModel.PostId = comment.PostId;
         commentViewModel.Text = comment.Text;
         commentViewModel.OwnerId = comment.OwnerId;
+        
+        HubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/commentHub"))
+            .Build();
+
+        await HubConnection.StartAsync();
     }
     
     private async Task Save()
@@ -54,6 +63,11 @@ else
         if (response.IsSuccessStatusCode)
         {
             NavigationManager.NavigateTo($"/comments/{comment.PostId}");
+            var currentComment = await response.Content.ReadFromJsonAsync<Comment>();
+            if (HubConnection is not null)
+            {
+                await HubConnection.SendAsync("SendEditComment", currentComment);
+            }
         }
         else
         {

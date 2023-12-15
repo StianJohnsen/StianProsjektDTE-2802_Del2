@@ -27,13 +27,7 @@ public class BlogController : ControllerBase
         return await _service.GetAllBlogs();
     }
 
-    [HttpGet]
-    [Route("howAreYou")]
-    public Task<IdentityUser> howAre(string userName)
-    {
-        var user = _service.howAreYou(userName);
-        return user;
-    }
+
 
 
     [HttpGet("{id:int}")]
@@ -61,15 +55,16 @@ public class BlogController : ControllerBase
             return BadRequest(ModelState);
         }
 
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
         var blog = new Blog
         {
             BlogId = blogViewModel.BlogId,
             Name = blogViewModel.Name,
             Status = blogViewModel.Status,
-            OwnerId = blogViewModel.OwnerId
+            OwnerId = blogViewModel.OwnerId,
         };
         
-        await _service.Save(blog);
+        await _service.Save(blog,userId);
 
         return CreatedAtAction("Get", new { id = blog.BlogId }, blog);
     }
@@ -101,8 +96,8 @@ public class BlogController : ControllerBase
             OwnerId = blogViewModel.OwnerId
         };
         
-        await _service.Save(blog);
-        return NoContent();
+        await _service.Save(blog,userId);
+        return CreatedAtAction("Get", new { id = blog.BlogId }, blog);
     }
 
     

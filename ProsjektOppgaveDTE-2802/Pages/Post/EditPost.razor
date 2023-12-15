@@ -1,8 +1,8 @@
-﻿
-@page "/post/{PostId:int}"
+﻿@page "/post/{PostId:int}"
 
 
 @using ProsjektOppgaveBlazor.data.Models.ViewModel
+@using Microsoft.AspNetCore.SignalR.Client
 @inject HttpClient BlogHttpClient
 @inject NavigationManager NavigationManager
 
@@ -10,7 +10,9 @@
 
 @if (post == null)
 {
-    <p><em>Loading...</em></p>
+    <p>
+        <em>Loading...</em>
+    </p>
 }
 else
 {
@@ -19,31 +21,57 @@ else
             <EditForm Model="@postViewModel">
                 <DataAnnotationsValidator/>
                 <div class="form-group">
-                        <div>
-                            <label for="Name">Post Title:</label>
-                        <InputText class="form-control" @bind-Value="postViewModel.Title" />
-                        <ValidationMessage For="@(()=>postViewModel.Title)" />
-                        </div>
-                        <div>
-                            <label for="Content">Post Content:</label>
-                            <InputText class="form-control" @bind-Value="postViewModel.Content" />
-                            <ValidationMessage For="@(()=>postViewModel.Content)" />
-                        </div>
-                        <button class="btn btn-primary" type="submit" @onclick="Save">Save</button>
+                    <div>
+                        <label for="Name">Post Title:</label>
+                        <InputText class="form-control" @bind-Value="postViewModel.Title"/>
+                        <ValidationMessage For="@(() => postViewModel.Title)"/>
+                    </div>
+                    <div>
+                        <label for="Content">Post Content:</label>
+                        <InputText class="form-control" @bind-Value="postViewModel.Content"/>
+                        <ValidationMessage For="@(() => postViewModel.Content)"/>
+                    </div>
+                    <button class="btn btn-primary" type="submit" @onclick="Save">Save</button>
                     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
                 </div>
+                        <h3>Tags</h3>
+
+                    @if (postViewModel.Tags is not null)
+                    {
+                        <ul>
+
+                            @foreach (var tag in postViewModel.Tags)
+
+                            {
+                                <li @onclick="() => RemoveTag(tag)" >@tag.content</li>
+                         }
+                        </ul>
+                    }
+                
+                <label for="Name">Tag name:</label>
+                <InputText class="form-control" @bind-Value="currentTag.content"/>
+                <button class="btn-secondary" type="submit" @onclick="submitTag">Submit</button>
+                
             </EditForm>
         </div>
     </div>
-}
+
 
 
 @code {
+
     [Parameter]
     public int PostId { get; set; }
 
+    private Tag currentTag = new Tag{content = "", Posts = new List<Post>()};
     private Post post = new();
+
+
     private PostViewModel postViewModel = new();
+
+    private HubConnection? HubConnection;
+
     protected override async Task OnInitializedAsync()
     {
         post = await BlogHttpClient.GetFromJsonAsync<Post>($"/Post/{PostId}");
@@ -52,16 +80,42 @@ else
         postViewModel.Title = post.Title;
         postViewModel.Content = post.Content;
         postViewModel.OwnerId = post.OwnerId;
+        postViewModel.Tags = post.Tags;
+
+        HubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/postHub"))
+            .Build();
+
+        await HubConnection.StartAsync();
+    }
+
+    private async Task submitTag()
+    {
+        if (!string.IsNullOrWhiteSpace(currentTag.content))
+        {
+            postViewModel.Tags.Add(currentTag);
+            currentTag = new Tag{ content = "", Posts = new List<Post>()};
+        }
+
+    }
+    
+    private async Task RemoveTag(Tag tag)
+    {
+        postViewModel.Tags.Remove(tag);
     }
 
     private async Task Save()
     {
-
         var response = await BlogHttpClient.PutAsJsonAsync($"/Post/{PostId}", postViewModel);
 
         if (response.IsSuccessStatusCode)
         {
             NavigationManager.NavigateTo($"/posts/{post.BlogId}");
+            var currentPost = await response.Content.ReadFromJsonAsync<Post>();
+            if (HubConnection is not null)
+            {
+                await HubConnection.SendAsync("SendEditPost", currentPost);
+            }
         }
         else
         {
@@ -69,4 +123,5 @@ else
         }
     }
 
+}
 }

@@ -56,7 +56,10 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.MapBlazorHub();
-app.MapHub<ChatHub>("/chathub");
+app.MapHub<BlogHub>("/blogHub");
+app.MapHub<PostHub>("/postHub");
+app.MapHub<CommentHub>("/commentHub");
+
 app.MapFallbackToPage("/_Host");
 
 app.Run();

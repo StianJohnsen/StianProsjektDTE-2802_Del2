@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProsjektOppgaveWebAPI.Models;
+using ProsjektOppgaveWebAPI.Models.ViewModel;
 using ProsjektOppgaveWebAPI.Services.TagServices;
 
 namespace ProsjektOppgaveWebAPI.Controllers;
@@ -19,13 +20,18 @@ public class TagController : ControllerBase
 
     [Authorize]
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Tag tag)
+    public async Task<IActionResult> Create([FromBody] TagViewModel tagViewModel)
     {
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
         }
 
+        var tag = new Tag
+        {
+            Id = tagViewModel.Id,
+            content = tagViewModel.content,
+        };
         await _service.Save(tag);
 
         return Ok();

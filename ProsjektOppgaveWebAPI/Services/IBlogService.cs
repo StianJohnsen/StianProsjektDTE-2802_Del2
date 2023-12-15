@@ -14,7 +14,7 @@ public interface IBlogService
 
     Blog? GetBlog(int id);
     
-    Task Save(Blog blog);
+    Task Save(Blog blog, string userId);
     
     Task Delete(int id , IPrincipal principal);
 

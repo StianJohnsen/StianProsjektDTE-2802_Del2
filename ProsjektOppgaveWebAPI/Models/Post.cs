@@ -11,4 +11,5 @@ public class Post
     public IdentityUser Owner { get; set; }
     public int BlogId { get; set; }
     public Blog Blog { get; set; }
+    public List<Tag> Tags { get; set; }
 }

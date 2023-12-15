@@ -50,7 +50,7 @@ public class CommentController : ControllerBase
             PostId = postId
         };
         await _service.Save(comment, User);
-        return CreatedAtAction("GetComment", new { id = postId }, commentViewModel);
+        return CreatedAtAction("GetComment", new { id = postId }, comment);
     }
     
     
@@ -81,7 +81,7 @@ public class CommentController : ControllerBase
 
         _service.Save(comment, User);
 
-        return NoContent();
+        return CreatedAtAction("GetComment", new { id = existingComment.PostId }, comment);
     }
     
     

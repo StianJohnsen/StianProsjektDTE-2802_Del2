@@ -22,10 +22,12 @@ public class BlogDbContext : IdentityDbContext<IdentityUser>
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+
+        builder.Entity<Post>()
+            .HasMany(p => p.Tags)
+            .WithMany(p => p.Posts);
         
-        builder.Entity<BlogTagRelations>()
-            .HasKey(bt => new { bt.BlogId, bt.TagId });
-        
+
         // SEEDING PREPARATION
         var hasher = new PasswordHasher<IdentityUser>();
         

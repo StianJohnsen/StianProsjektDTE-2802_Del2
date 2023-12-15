@@ -54,12 +54,12 @@ public class BlogService : IBlogService
         var b = (from blog in _db.Blog
             where blog.BlogId == id
             select blog)
-            .Include(b => b.BlogTags)
+            //.Include(b => b.BlogTags)
             .FirstOrDefault();
         return b;
     }
  
-    public async Task Save(Blog blog)
+    public async Task Save(Blog blog, string userId)
     {
 
 
@@ -69,6 +69,8 @@ public class BlogService : IBlogService
             _db.Entry(existingBlog).State = EntityState.Detached;
         }
 
+        var currentUser = _manager.FindByIdAsync(userId);
+        blog.Owner = currentUser.Result;
         _db.Blog.Update(blog);
         await _db.SaveChangesAsync();
     }
@@ -114,11 +116,12 @@ public class BlogService : IBlogService
     // POSTS
     public Post? GetPost(int id)
     {
-        var p = (from post in _db.Post
-                where post.PostId == id
-                select post)
-            .FirstOrDefault();
-        return p;
+        var p = _db.Post
+            .Where(p => p.PostId == id)
+            .Include(p => p.Owner)
+            .Include(p => p.Tags)
+            .ToList();
+        return p[0];
     }
     
     public async Task<IEnumerable<Post>> GetPostsForBlog(int blogId)
@@ -128,6 +131,7 @@ public class BlogService : IBlogService
             var posts = _db.Post
                 .Where(p => p.BlogId == blogId)
                 .Include(p => p.Owner)
+                .Include(p=>p.Tags)
                 .ToList();
 
             return posts;

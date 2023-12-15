@@ -44,9 +44,9 @@ else
         {
             <tr>
                 <td>@blog.Name</td>
-                <td>@blog.Owner.UserName</td>
+                <td>@blog.Owner?.UserName</td>
                 <td>
-                    <a href="posts/@blog.BlogId">View</a>
+                    <a href="posts/@blog.BlogId">Posts</a>
                 </td>
                 @if (blog.OwnerId == userId)
                 {
@@ -82,21 +82,34 @@ else
     {
         
         hubConnection = new HubConnectionBuilder()
-            .WithUrl(NavigationManager.ToAbsoluteUri("/chathub"))
+            .WithUrl(NavigationManager.ToAbsoluteUri("/blogHub"))
             .Build();
         
         
-        hubConnection.On<BlogViewModel,string>("ReceiveMessage", (message1, userName) =>
+        hubConnection.On<Blog>("ReceiveCreateBlog", (currentBlog) =>
         {
-            var currentBlog = new Blog
-            {
-                BlogId = message1.BlogId,
-                Name = message1.Name,
-                Status = message1.Status,
-                OwnerId = message1.OwnerId,
-                Owner = new IdentityUser{UserName = userName}
-            };
             blogs.Add(currentBlog);
+            InvokeAsync(StateHasChanged);
+        });
+        
+        hubConnection.On<Blog>("ReceiveEditBlog", (currentBlog) =>
+        {
+
+            var index = blogs.FindIndex(blog => blog.BlogId == currentBlog.BlogId);
+
+            if (index != -1)
+            {
+                blogs[index] = currentBlog;
+            }
+            InvokeAsync(StateHasChanged);
+        });
+        
+        
+        
+        hubConnection.On<int>("ReceiveDeleteBlog", (currentBlogId) =>
+        {
+            var blogToBeDeleted = blogs.Find(blog => blog.BlogId == currentBlogId);
+            blogs.Remove(blogToBeDeleted);
             InvokeAsync(StateHasChanged);
         });
 
@@ -111,14 +124,7 @@ else
 
         blogs = await BlogHttpClient.GetFromJsonAsync<List<Blog>>("/Blog");
     }
-
-    private async Task Send()
-    {
-        if (hubConnection is not null)
-        {
-            await hubConnection.SendAsync("SendMessage");
-        }
-    }
+    
 
     public bool IsConnected =>
         hubConnection?.State == HubConnectionState.Connected;
@@ -136,8 +142,13 @@ else
         var response = await BlogHttpClient.DeleteAsync($"/Blog/{id}");
         if (response.IsSuccessStatusCode)
         {
-            NavigationManager.NavigateTo("/blogs",true);
+            if (hubConnection is not null)
+            {
+                await hubConnection.SendAsync("SendDeleteBlog",id);
+            }
+            NavigationManager.NavigateTo("/blogs");
         }
+        
     }
 
 

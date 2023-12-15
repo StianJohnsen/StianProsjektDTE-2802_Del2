@@ -34,15 +34,15 @@ public class PostController : ControllerBase
     
     
     [Authorize]
-    [HttpPost("{blogId:int}")]
-    public async Task<IActionResult> Create([FromRoute] int blogId,[FromBody] PostViewModel postViewModel)
+    [HttpPost("{postId:int}")]
+    public async Task<IActionResult> Create([FromRoute] int postId,[FromBody] PostViewModel postViewModel)
     {
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
         }
 
-        var blog = _service.GetBlog(blogId);
+        var blog = _service.GetBlog(postId);
 
         var post = new Post
         {
@@ -50,13 +50,13 @@ public class PostController : ControllerBase
             Title = postViewModel.Title,
             Content = postViewModel.Content,
             OwnerId = postViewModel.OwnerId,
-            BlogId = blogId
+            BlogId = postId
 
         };
         if (blog != null && blog.Status == 0) return BadRequest("This blog is closed for new posts and comments!");
         
-        await _service.SavePost(post, User);
-        return CreatedAtAction("GetPosts", new { id = blogId }, post);
+        await _service.SavePost(post,User);
+        return CreatedAtAction("GetPosts", new { id = postId }, post);
     }
 
     
@@ -88,7 +88,7 @@ public class PostController : ControllerBase
         
         _service.SavePost(post, User);
 
-        return NoContent();
+        return CreatedAtAction("GetPosts", new { id = existingPost.PostId }, post);
     }
 
     

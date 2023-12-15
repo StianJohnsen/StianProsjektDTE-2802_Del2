@@ -3,6 +3,7 @@
 
 @using ProsjektOppgaveBlazor.data.Models;
 @using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.SignalR.Client
 @using ProsjektOppgaveBlazor.data.Models.ViewModel
 @inject HttpClient BlogHttpClient
 @inject NavigationManager NavigationManager
@@ -39,6 +40,9 @@
     public int BlogId { get; set; }
     
     private Blog blog = new();
+    
+    private HubConnection? HubConnection;
+
 
     private bool Status
     {
@@ -96,6 +100,14 @@
         blogViewModel.Name = blog.Name;
         blogViewModel.Status = blog.Status;
         blogViewModel.OwnerId = blog.OwnerId;
+        
+        HubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/blogHub"))
+            .Build();
+        
+
+
+        await HubConnection.StartAsync();
     }
 
     private async Task Save()
@@ -104,6 +116,11 @@
         if (response.IsSuccessStatusCode)
         {
             NavigationManager.NavigateTo("/blogs");
+            var currentBlog = await response.Content.ReadFromJsonAsync<Blog>();
+            if (HubConnection is not null)
+            {
+                await HubConnection.SendAsync("SendEditBlog",currentBlog);
+            }
         }
     }
 

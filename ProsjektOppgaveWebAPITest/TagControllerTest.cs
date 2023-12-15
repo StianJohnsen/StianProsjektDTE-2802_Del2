@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProsjektOppgaveWebAPI.Controllers;
 using ProsjektOppgaveWebAPI.Models;
+using ProsjektOppgaveWebAPI.Models.ViewModel;
 using ProsjektOppgaveWebAPI.Services.TagServices;
 
 namespace ProsjektOppgaveWebAPITest;
@@ -27,7 +28,7 @@ public class TagControllerTest
         _controller.ModelState.AddModelError("error", "some error");
 
         // Act
-        var result = await _controller.Create(new Tag());
+        var result = await _controller.Create(new TagViewModel());
 
         // Assert
         Assert.IsType<BadRequestObjectResult>(result);
@@ -38,9 +39,10 @@ public class TagControllerTest
     {
         // Arrange
         var tag = new Tag();
+        var tagViewModel = new TagViewModel();
 
         // Act
-        var result = await _controller.Create(tag);
+        var result = await _controller.Create(tagViewModel);
 
         // Assert
         Assert.IsType<OkResult>(result);
