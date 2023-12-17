@@ -18,7 +18,6 @@ public class TagController : ControllerBase
     }
 
 
-    [Authorize]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] TagViewModel tagViewModel)
     {
@@ -26,14 +25,24 @@ public class TagController : ControllerBase
         {
             return BadRequest(ModelState);
         }
+        
+        var existingTag = _service.GetTag(tagViewModel.content);
+
 
         var tag = new Tag
         {
             Id = tagViewModel.Id,
             content = tagViewModel.content,
         };
-        await _service.Save(tag);
 
-        return Ok();
+        if (existingTag == null)
+        {
+            await _service.Save(tag);
+            return Ok(tag);
+        }
+
+
+        return Ok(existingTag);
     }
+
 }

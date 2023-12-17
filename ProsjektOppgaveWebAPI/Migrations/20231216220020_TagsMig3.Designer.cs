@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ProsjektOppgaveWebAPI.Data;
 
@@ -10,9 +11,10 @@ using ProsjektOppgaveWebAPI.Data;
 namespace ProsjektOppgaveWebAPI.Migrations
 {
     [DbContext(typeof(BlogDbContext))]
-    partial class BlogDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231216220020_TagsMig3")]
+    partial class TagsMig3
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "6.0.25");
@@ -132,15 +134,15 @@ namespace ProsjektOppgaveWebAPI.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "57592c00-63e8-4bb0-8171-05aa78695845",
+                            Id = "0ad3a295-69a7-4808-b14b-997c28d528ea",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "1d7c9fb4-0b22-46a7-a6bb-7c91e1efcfc6",
+                            ConcurrencyStamp = "8bf1b30e-0e9d-4362-b1fb-013f226840ed",
                             Email = "admin@example.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@EXAMPLE.COM",
                             NormalizedUserName = "ADMIN",
-                            PasswordHash = "AQAAAAIAAYagAAAAECuKlUqVCaMUS5+9cMy3jKCbLJHas06eWVVHGFCWdmVv5/lVzL5KUV2rR3FM2+/2AQ==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEBUUT6JDVaAX8m2zmD2sM8uWGrTvXgW2Iw0xxCod6Lq2aF3EjegyHTSguB+RjX2MJA==",
                             PhoneNumberConfirmed = false,
                             SecurityStamp = "",
                             TwoFactorEnabled = false,

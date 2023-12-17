@@ -18,6 +18,8 @@ public class BlogDbContext : IdentityDbContext<IdentityUser>
     public DbSet<Comment>? Comment { get; set; }
     public DbSet<IdentityUser>? User { get; set; }
     public DbSet<Tag>? Tag { get; set; }
+    
+    public DbSet<PostTag>? PostTag { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -25,7 +27,8 @@ public class BlogDbContext : IdentityDbContext<IdentityUser>
 
         builder.Entity<Post>()
             .HasMany(p => p.Tags)
-            .WithMany(p => p.Posts);
+            .WithMany(p => p.Posts)
+            .UsingEntity<PostTag>();
         
 
         // SEEDING PREPARATION

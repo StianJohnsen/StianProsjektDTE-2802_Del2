@@ -17,11 +17,25 @@ public class TagService : ITagService
     
     public async Task Save(Tag tag)
     {
-        var existingTag = _db.Tag.Find(tag.Id);
-        if (existingTag == null)
-        {
-            _db.Tag.Add(tag);
+        _db.Tag?.Add(tag);
             await _db.SaveChangesAsync();
-        }
+        
     }
+
+    public Tag GetTag(string tagContent)
+    {
+        var existingTag = _db.Tag
+            .Where(t => t.content == tagContent)
+            .ToList();
+
+        if (existingTag.Count == 0)
+        {
+            return null;
+        }
+
+        return existingTag[0];
+    }
+
+
+
 }

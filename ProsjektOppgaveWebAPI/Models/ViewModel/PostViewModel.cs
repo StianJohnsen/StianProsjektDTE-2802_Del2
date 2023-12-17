@@ -11,7 +11,9 @@ public class PostViewModel
     public string Content { get; set; }
     public int BlogId { get; set; }
     public string OwnerId { get; set; }
-    public List<Tag> Tags { get; set; }
+    public List<Tag>? Tags { get; set; }
+    public string TagToBeAdded { get; set; }
+
 
     
 }

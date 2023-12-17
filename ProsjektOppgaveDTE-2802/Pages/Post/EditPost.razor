@@ -30,6 +30,13 @@ else
                         <label for="Content">Post Content:</label>
                         <InputText class="form-control" @bind-Value="postViewModel.Content"/>
                         <ValidationMessage For="@(() => postViewModel.Content)"/>
+                        
+                    </div>
+                    
+                    <div>
+                        <label for="Tag">Add one tag</label>
+                        <InputText class ="form-control" @bind-Value="postViewModel.TagToBeAdded"/>
+                        
                     </div>
                     <button class="btn btn-primary" type="submit" @onclick="Save">Save</button>
                     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
@@ -93,7 +100,22 @@ else
     {
         if (!string.IsNullOrWhiteSpace(currentTag.content))
         {
-            postViewModel.Tags.Add(currentTag);
+            var creatingTagResponse = await BlogHttpClient.PostAsJsonAsync<Tag>("/Tag", currentTag);
+            if (creatingTagResponse.IsSuccessStatusCode)
+            {
+                var createdTag = await creatingTagResponse.Content.ReadFromJsonAsync<Tag>();
+                postViewModel.Tags.Add(createdTag);
+                var creatingPostTagResponse = await BlogHttpClient.PostAsJsonAsync("/PostTag", new PostTagViewModel
+                {
+                    Id = 0,
+                    PostId = post.PostId,
+                    TagId = createdTag.Id
+                });
+            }
+            else
+            {
+                Console.WriteLine(creatingTagResponse.Content.ReadAsStringAsync().Result);
+            }
             currentTag = new Tag{ content = "", Posts = new List<Post>()};
         }
 
@@ -106,6 +128,8 @@ else
 
     private async Task Save()
     {
+        //var oneElement = postViewModel.Tags[0];
+        //postViewModel.Tags.Add(oneElement);
         var response = await BlogHttpClient.PutAsJsonAsync($"/Post/{PostId}", postViewModel);
 
         if (response.IsSuccessStatusCode)

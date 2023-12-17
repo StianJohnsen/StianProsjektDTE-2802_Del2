@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ProsjektOppgaveWebAPI.Data;
 
@@ -10,9 +11,10 @@ using ProsjektOppgaveWebAPI.Data;
 namespace ProsjektOppgaveWebAPI.Migrations
 {
     [DbContext(typeof(BlogDbContext))]
-    partial class BlogDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231216214704_TagsMig2")]
+    partial class TagsMig2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "6.0.25");
@@ -132,15 +134,15 @@ namespace ProsjektOppgaveWebAPI.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "57592c00-63e8-4bb0-8171-05aa78695845",
+                            Id = "090d8c35-9857-4c4c-9f07-b57ed3f78fb9",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "1d7c9fb4-0b22-46a7-a6bb-7c91e1efcfc6",
+                            ConcurrencyStamp = "5b121c51-f545-4904-8ba5-4461f00275c2",
                             Email = "admin@example.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@EXAMPLE.COM",
                             NormalizedUserName = "ADMIN",
-                            PasswordHash = "AQAAAAIAAYagAAAAECuKlUqVCaMUS5+9cMy3jKCbLJHas06eWVVHGFCWdmVv5/lVzL5KUV2rR3FM2+/2AQ==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEIB/J5dfrQDBOXp1vuJRB2fhgXI/LHFM1+DM4ND0sIqVkiV9sfZKpxxr1Y+A7rIBpQ==",
                             PhoneNumberConfirmed = false,
                             SecurityStamp = "",
                             TwoFactorEnabled = false,
@@ -309,19 +311,13 @@ namespace ProsjektOppgaveWebAPI.Migrations
 
             modelBuilder.Entity("ProsjektOppgaveWebAPI.Models.PostTag", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
                     b.Property<int>("PostId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("TagId")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("Id");
-
-                    b.HasIndex("PostId");
+                    b.HasKey("PostId", "TagId");
 
                     b.HasIndex("TagId");
 

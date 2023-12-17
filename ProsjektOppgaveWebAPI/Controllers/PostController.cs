@@ -71,6 +71,8 @@ public class PostController : ControllerBase
         if (existingPost is null)
             return NotFound();
         
+        postViewModel.Tags.Add(new Tag{content = postViewModel.TagToBeAdded, Posts = new List<Post>()});
+        
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (existingPost.OwnerId != userId)
         {
@@ -83,7 +85,8 @@ public class PostController : ControllerBase
             Title = postViewModel.Title,
             Content = postViewModel.Content,
             OwnerId = postViewModel.OwnerId,
-            BlogId = postViewModel.BlogId
+            BlogId = postViewModel.BlogId,
+            Tags = postViewModel.Tags
         };
         
         _service.SavePost(post, User);
