@@ -17,6 +17,13 @@ public class PostTagController : ControllerBase
     }
 
 
+    [HttpGet]
+    public async Task<PostTag> GetPostTag(int postId, int tagId)
+    {
+        return _service.GetPostTagById(postId, tagId);
+    }
+
+
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] PostTagViewModel postTagViewModel)
     {
@@ -34,5 +41,18 @@ public class PostTagController : ControllerBase
         await _service.Save(postTag);
 
         return Ok();
+    }
+
+    [HttpDelete("{postTagId}")]
+    public async Task<IActionResult> Delete([FromRoute] int postTagId)
+    {
+        var postTag = _service.GetPostTag(postTagId);
+        if (postTag is null)
+        {
+            return NotFound();
+        }
+
+        await _service.Delete(postTagId);
+        return NoContent();
     }
 }

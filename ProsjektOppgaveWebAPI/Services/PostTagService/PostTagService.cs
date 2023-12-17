@@ -27,4 +27,33 @@ public class PostTagService: IPostTagService
         }
 
     }
+
+    public async Task Delete(int postTagId)
+    {
+        var currentPostTag = _db.PostTag.Find(postTagId);
+        _db.PostTag.Remove(currentPostTag);
+        await _db.SaveChangesAsync();
+    }
+
+    public PostTag? GetPostTag(int postTagId)
+    {
+        var currentPostTag = _db.PostTag
+            .Where(pt => pt.Id == postTagId)
+            .FirstOrDefault();
+        return currentPostTag;
+    }
+
+    public PostTag? GetPostTagById(int postId, int tagId)
+    {
+        var currentPostTag = _db.PostTag
+            .Where(pt => pt.PostId == postId)
+            .Where(pt => pt.TagId == tagId)
+            .ToList();
+
+        if (currentPostTag.Count == 0)
+        {
+            return null;
+        }
+        return currentPostTag[0];
+    }
 }

@@ -11,7 +11,9 @@
 
 @if (post == null)
 {
-    <p><em>Loading...</em></p>
+    <p>
+        <em>Loading...</em>
+    </p>
 }
 else
 {
@@ -22,21 +24,40 @@ else
                 <div class="form-group">
                     <div>
                         <label for="Name">Post title:</label>
-                        <InputText class="form-control" @bind-Value="postViewModel.Title" />
-                        <ValidationMessage For="@(()=>postViewModel.Title)" />
+                        <InputText class="form-control" @bind-Value="postViewModel.Title"/>
+                        <ValidationMessage For="@(() => postViewModel.Title)"/>
                     </div>
                     <div>
                         <label for="Name">Post content:</label>
-                        <InputText class="form-control" @bind-Value="postViewModel.Content" />
-                        <ValidationMessage For="@(()=>postViewModel.Content)" />
+                        <InputText class="form-control" @bind-Value="postViewModel.Content"/>
+                        <ValidationMessage For="@(() => postViewModel.Content)"/>
                     </div>
-                        
+
                     <button class="btn btn-primary" @onclick="Save" type="submit" disabled="@(!IsConnected)">Save</button>
-                    
+
                     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 </div>
+
+                <h3>Tags</h3>
+
+                @if (postViewModel.Tags is not null)
+                {
+                    <ul>
+
+                        @foreach (var tag in postViewModel.Tags)
+
+                        {
+                            <li @onclick="() => RemoveTag(tag)">@tag.content</li>
+                        }
+                    </ul>
+                }
+
+                <label for="Name">Tag name:</label>
+                <InputText class="form-control" @bind-Value="currentTag.content"/>
+                <button class="btn-secondary" type="submit" @onclick="submitTag">Submit</button>
+
             </EditForm>
-            
+
             <p>@errorMessage</p>
         </div>
     </div>
@@ -44,8 +65,7 @@ else
 
 
 @code {
-    [Parameter]
-    public string BlogId { get; set; }
+    [Parameter] public string BlogId { get; set; }
 
 
     private HubConnection? HubConnection;
@@ -53,40 +73,44 @@ else
     private string userId;
     private Post post = new Post();
     
+    private Tag currentTag = new Tag{content = "", Posts = new List<Post>()};
+
+
+    private Post createdPost;
+
     private string errorMessage = string.Empty;
-    
+
     [CascadingParameter] private Task<AuthenticationState> authenticationStateTask { get; set; }
-    
+
     protected override async Task OnInitializedAsync()
     {
         HubConnection = new HubConnectionBuilder()
             .WithUrl(NavigationManager.ToAbsoluteUri("/postHub"))
             .Build();
-        
+
         await HubConnection.StartAsync();
-        
+
         var authState = await authenticationStateTask;
         user = authState.User;
         userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     }
 
-    private PostViewModel postViewModel = new();
+    private PostViewModel postViewModel = new PostViewModel { Tags = new List<Tag>() };
 
 
     private async Task Save()
     {
-
         postViewModel.OwnerId = userId;
-        
+
         var response = await BlogHttpClient.PostAsJsonAsync($"/post/{BlogId}", postViewModel);
 
         if (response.IsSuccessStatusCode)
         {
             NavigationManager.NavigateTo($"/posts/{BlogId}");
-            var currentPost = await response.Content.ReadFromJsonAsync<Post>();
+            createdPost = await response.Content.ReadFromJsonAsync<Post>();
             if (HubConnection is not null)
             {
-                await HubConnection.SendAsync("SendCreatePost", currentPost);
+                await HubConnection.SendAsync("SendCreatePost", createdPost);
             }
         }
         else
@@ -94,6 +118,20 @@ else
             errorMessage = response.Content.ReadAsStringAsync().Result;
         }
 
+        foreach (var tag in postViewModel.Tags)
+        {
+            var creatingTagResponse = await BlogHttpClient.PostAsJsonAsync("/Tag", tag);
+            if (creatingTagResponse.IsSuccessStatusCode)
+            {
+                var createdTag = await creatingTagResponse.Content.ReadFromJsonAsync<Tag>();
+                var creatingPostTagResponse = await BlogHttpClient.PostAsJsonAsync("/PostTag", new PostTagViewModel
+                {
+                    Id = 0,
+                    PostId = createdPost.PostId,
+                    TagId = createdTag.Id
+                });
+            }
+        }
     }
 
     public bool IsConnected =>
@@ -107,4 +145,20 @@ else
             await HubConnection.DisposeAsync();
         }
     }
+    
+        private async Task RemoveTag(Tag tag)
+        {
+            postViewModel.Tags.Remove(tag);
+        }
+        
+        private async Task submitTag()
+        {
+            if (!string.IsNullOrWhiteSpace(currentTag.content))
+            {
+                postViewModel.Tags.Add(currentTag);
+                currentTag = new Tag{ content = "", Posts = new List<Post>()};
+            }
+
+        }
+
 }

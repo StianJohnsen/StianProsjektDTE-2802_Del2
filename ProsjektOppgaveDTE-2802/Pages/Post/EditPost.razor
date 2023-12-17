@@ -32,12 +32,6 @@ else
                         <ValidationMessage For="@(() => postViewModel.Content)"/>
                         
                     </div>
-                    
-                    <div>
-                        <label for="Tag">Add one tag</label>
-                        <InputText class ="form-control" @bind-Value="postViewModel.TagToBeAdded"/>
-                        
-                    </div>
                     <button class="btn btn-primary" type="submit" @onclick="Save">Save</button>
                     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
@@ -124,6 +118,9 @@ else
     private async Task RemoveTag(Tag tag)
     {
         postViewModel.Tags.Remove(tag);
+
+        var currentPostTag = await BlogHttpClient.GetFromJsonAsync<PostTag>($"/PostTag?postId={PostId}&tagId={tag.Id}");
+        var removingPostTagResponse = await BlogHttpClient.DeleteAsync($"/PostTag/{currentPostTag.Id}");
     }
 
     private async Task Save()
