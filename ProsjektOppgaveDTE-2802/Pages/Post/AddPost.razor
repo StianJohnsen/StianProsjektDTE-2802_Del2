@@ -9,14 +9,7 @@
 
 <h3>Create post</h3>
 
-@if (post == null)
-{
-    <p>
-        <em>Loading...</em>
-    </p>
-}
-else
-{
+
     <div class="row">
         <div class="col-md-3">
             <EditForm Model="@postViewModel">
@@ -61,7 +54,7 @@ else
             <p>@errorMessage</p>
         </div>
     </div>
-}
+
 
 
 @code {
