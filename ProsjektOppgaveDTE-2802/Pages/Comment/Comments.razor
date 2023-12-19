@@ -1,6 +1,7 @@
 ﻿@page "/comments/{PostId}"
 @using System.Security.Claims
 @using Microsoft.AspNetCore.SignalR.Client
+@using ProsjektOppgaveBlazor.data.Models.ViewModel
 @inject HttpClient BlogHttpClient
 @inject NavigationManager NavigationManager
 
@@ -11,51 +12,75 @@
     <a class="btn btn-primary" href="addComment/@post.PostId">Create</a>
 }
 
-@if (comments == null) 
+@if (comments == null)
 {
-    <p><em>Loading...</em></p>
+    <p>
+        <em>Loading...</em>
+    </p>
 }
 else
 {
-    <table class="table" >
-    <thead>
-    <tr>
-        <th>Text</th>
-        <th>Owner</th>
-    </tr>
-    </thead>
-    <tbody>
-            @foreach (var comment in comments)
+    <p>Amount of likes: @likes.Count</p>
+    @if (isLiked)
     {
-        <tr>
-            <td>@comment.Text</td>
-            <td>@comment.Owner.Email</td>
-            @if(comment.OwnerId == userId)
-        {
-            <td><a href="comment/@comment.CommentId">Edit</a></td>
-            <td><a href="comments/@comment.PostId" @onclick="@(e =>DeleteBlog(comment.CommentId))">Delete</a></td>
-        }
+        <button class="btn btn-dark" onclick="@DislikePost">Unlike</button>
 
-        </tr>
     }
-    </tbody>
+    else
+    {
+        <button class="btn btn-light" onclick="@LikePost">Like</button>
+
+    }
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Text</th>
+            <th>Owner</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var comment in comments)
+        {
+            <tr>
+                <td>@comment.Text</td>
+                <td>@comment.Owner.Email</td>
+                @if (comment.OwnerId == userId)
+                {
+                    <td>
+                        <a href="comment/@comment.CommentId">Edit</a>
+                    </td>
+                    <td>
+                        <a href="comments/@comment.PostId" @onclick="@(e => DeleteBlog(comment.CommentId))">Delete</a>
+                    </td>
+                }
+
+            </tr>
+        }
+        </tbody>
     </table>
 }
 
 @code {
+
     [Parameter]
     public string PostId { get; set; }
+
     private List<Comment> comments;
     private Post post;
 
     private HubConnection? HubConnection;
-    
-    
+
+    private List<PostLike> likes;
+
 
     private ClaimsPrincipal user;
 
-    private string userId;
+    private bool isLiked;
     
+    private HttpResponseMessage? isLikedResponse;
+
+    private string userId;
+
     [CascadingParameter]
     private Task<AuthenticationState> authenticationStateTask { get; set; }
 
@@ -64,13 +89,13 @@ else
         HubConnection = new HubConnectionBuilder()
             .WithUrl(NavigationManager.ToAbsoluteUri("/commentHub"))
             .Build();
-        
+
         HubConnection.On<Comment>("ReceiveCreateComment", (currentComment) =>
         {
             comments.Add(currentComment);
             InvokeAsync(StateHasChanged);
         });
-        
+
         HubConnection.On<Comment>("ReceiveEditComment", (currentComment) =>
         {
             var index = comments.FindIndex(comment => comment.CommentId == currentComment.CommentId);
@@ -79,10 +104,10 @@ else
             {
                 comments[index] = currentComment;
             }
-            
+
             InvokeAsync(StateHasChanged);
         });
-        
+
         HubConnection.On<int>("ReceiveDeleteComment", (commentId) =>
         {
             var commentToBeDeleted = comments.Find(comment => comment.CommentId == commentId);
@@ -91,17 +116,20 @@ else
         });
 
         await HubConnection.StartAsync();
-        
+
         var authState = await authenticationStateTask;
 
         user = authState.User;
-        
+
         userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-        
-        
+
+        likes = await BlogHttpClient.GetFromJsonAsync<List<PostLike>>($"/PostLike?postId={PostId}");
+
+        isLiked = likes.Any(like => like.UserId == userId && like.PostId == (int.TryParse(PostId, out var parsedPostId) ? parsedPostId : -1));
+
+
         comments = await BlogHttpClient.GetFromJsonAsync<List<Comment>>($"/Comment?postId={PostId}");
         post = await BlogHttpClient.GetFromJsonAsync<Post>($"/Post/{PostId}");
-
     }
 
     private async Task DeleteBlog(int id)
@@ -109,18 +137,54 @@ else
         var response = await BlogHttpClient.DeleteAsync($"/Comment/{id}");
         if (response.IsSuccessStatusCode)
         {
-
             if (HubConnection is not null)
             {
                 await HubConnection.SendAsync("SendDeleteComment", id);
             }
-            
+
             NavigationManager.NavigateTo($"/comments/{PostId}");
         }
         else
         {
             Console.WriteLine($"Error: {response.Content.ReadAsStringAsync().Result}");
-
         }
     }
+
+    private async Task LikePost()
+    {
+        var likeViewModel = new PostLikeViewModel
+        {
+            PostLikeId = 0,
+            UserId = userId
+        };
+        isLikedResponse = await BlogHttpClient.PostAsJsonAsync($"/PostLike/{PostId}", likeViewModel);
+        if (isLikedResponse.IsSuccessStatusCode)
+        {
+            isLiked = true;
+            likes.Add(isLikedResponse.Content.ReadFromJsonAsync<PostLike>().Result);
+        }
+    }
+
+    private async Task DislikePost()
+    {
+        var likedPost = await BlogHttpClient.GetFromJsonAsync<PostLike>($"/GetByPostNdUserId?postId={PostId}&userId={userId}");
+    var isDislikedResponse = await BlogHttpClient.DeleteAsync($"/PostLike/{likedPost.PostLikeId}");
+    if (isDislikedResponse.IsSuccessStatusCode)
+    {
+        isLiked = false;
+        likes.Remove(likes.Find(like => like.PostLikeId == likedPost.PostLikeId && like.UserId == likedPost.UserId && like.PostId == likedPost.PostId));
+    }
+        if (likes[likes.Count()-1] == likedPost)
+        {
+            Console.WriteLine("Hei");
+
+        }
+
+        Console.WriteLine(likes[likes.Count()-1] == likedPost);
+        Console.WriteLine(likes[likes.Count()-1].PostId == likedPost.PostId);
+        Console.WriteLine(likes[likes.Count()-1].UserId == likedPost.UserId);
+
+
+    }
+
 }

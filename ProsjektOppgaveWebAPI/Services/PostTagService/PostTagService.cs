@@ -19,8 +19,12 @@ public class PostTagService: IPostTagService
     public async Task Save(PostTag postTag)
     {
         Console.WriteLine("hello world!");
-        var existingPostTag = _db.PostTag.Find(postTag.Id);
-        if (existingPostTag == null)
+        var existingPostTagById = _db.PostTag.Find(postTag.Id);
+        var existingPostTagByPostIdAndTagId = _db.PostTag
+            .Where(pt => pt.PostId == postTag.PostId)
+            .Where(pt => pt.TagId == postTag.TagId)
+            .ToList();
+        if (existingPostTagById == null && existingPostTagByPostIdAndTagId.Count == 0)
         {
             _db.PostTag.Add(postTag);
             await _db.SaveChangesAsync();

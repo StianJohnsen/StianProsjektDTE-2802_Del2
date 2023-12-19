@@ -20,6 +20,8 @@ public class BlogDbContext : IdentityDbContext<IdentityUser>
     public DbSet<Tag>? Tag { get; set; }
     
     public DbSet<PostTag>? PostTag { get; set; }
+    
+    public DbSet<PostLike>? PostLike { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -30,6 +32,7 @@ public class BlogDbContext : IdentityDbContext<IdentityUser>
             .WithMany(p => p.Posts)
             .UsingEntity<PostTag>();
         
+
 
         // SEEDING PREPARATION
         var hasher = new PasswordHasher<IdentityUser>();

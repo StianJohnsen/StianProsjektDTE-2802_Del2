@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ProsjektOppgaveWebAPI.Data;
 
@@ -10,9 +11,10 @@ using ProsjektOppgaveWebAPI.Data;
 namespace ProsjektOppgaveWebAPI.Migrations
 {
     [DbContext(typeof(BlogDbContext))]
-    partial class BlogDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231219112218_postLikesMig2")]
+    partial class postLikesMig2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "6.0.25");
@@ -132,15 +134,15 @@ namespace ProsjektOppgaveWebAPI.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "11b3ed16-2da9-4678-bce1-821c514ce8c0",
+                            Id = "285a1a82-5379-4561-8fa9-0ec8e8443325",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "34076597-6b58-45a6-b02a-90d6917def42",
+                            ConcurrencyStamp = "75104ced-373b-4c1d-a504-62283d24e002",
                             Email = "admin@example.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@EXAMPLE.COM",
                             NormalizedUserName = "ADMIN",
-                            PasswordHash = "AQAAAAIAAYagAAAAEFJ3I/p/mHmcjhWX5eA/wCopAfiWItp2/K5T8c7Qr54r997cpCYVaOWQoZnZ1dcZGw==",
+                            PasswordHash = "AQAAAAIAAYagAAAAECYHWTZn3t0ITpzJAsYUhaWXcBOSXTRVYHAvqXnhtYlhRWDGfSxMfiBiGKJqF4KpEA==",
                             PhoneNumberConfirmed = false,
                             SecurityStamp = "",
                             TwoFactorEnabled = false,
@@ -316,15 +318,17 @@ namespace ProsjektOppgaveWebAPI.Migrations
                     b.Property<int>("PostId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UserId1")
                         .HasColumnType("TEXT");
 
                     b.HasKey("PostLikeId");
 
                     b.HasIndex("PostId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId1");
 
                     b.ToTable("PostLike");
                 });
@@ -475,9 +479,7 @@ namespace ProsjektOppgaveWebAPI.Migrations
 
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
                         .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("UserId1");
 
                     b.Navigation("Post");
 

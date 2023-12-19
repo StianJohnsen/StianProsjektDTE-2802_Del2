@@ -10,6 +10,7 @@ using ProsjektOppgaveWebAPI.Services;
 using ProsjektOppgaveWebAPI.Services.CommentServices;
 using ProsjektOppgaveWebAPI.Services.JwtServices;
 using ProsjektOppgaveWebAPI.Services.JwtServices.Models;
+using ProsjektOppgaveWebAPI.Services.PostLikeService;
 using ProsjektOppgaveWebAPI.Services.PostTagService;
 using ProsjektOppgaveWebAPI.Services.TagServices;
 
@@ -65,6 +66,7 @@ services.AddTransient<IBlogService, BlogService>();
 services.AddTransient<ICommentService, CommentService>();
 services.AddTransient<ITagService, TagService>();
 services.AddTransient<IPostTagService, PostTagService>();
+services.AddTransient<IPostLikeService, PostLikeService>();
 
 services.AddControllers()
     .AddJsonOptions(options =>
